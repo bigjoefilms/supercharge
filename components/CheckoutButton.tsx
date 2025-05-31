@@ -4,7 +4,7 @@ import { initializeVerxio, getWalletLoyaltyPasses, getProgramDetails, getAssetDa
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { publicKey } from '@metaplex-foundation/umi';
 import { encodeURL, createQR } from '@solana/pay';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey} from '@solana/web3.js';
 import UsdcLogo from '@/public/usdc.png'
 import BigNumber from 'bignumber.js';
 import Image from 'next/image';
@@ -15,18 +15,33 @@ const quanta = localFont({
   src: '../app/QuantaGroteskProBold.otf',
 })
 
+interface LoyaltyPassDetails {
+  name: string;
+}
+
 interface CheckoutDetails {
   originalAmount: number;
   newAmount: number;
   discountAmount: number;
-  organisation:string
+  organisation: string;
   discountPercentage: number;
   organizationName: string;
   loyaltyPassFound: boolean;
-  loyaltyPassDetails: any | null;
+  loyaltyPassDetails: LoyaltyPassDetails | null;
   canClaimPass: boolean;
-  purchaseDescription:string
+  purchaseDescription: string;
 }
+
+interface SolanaPayUrlParams {
+  recipient: PublicKey;
+  amount: BigNumber;
+  label: string;
+  message: string;
+  memo: string;
+  'spl-token': string;
+  reference?: PublicKey[];
+}
+
 
 interface CheckoutButtonProps {
   walletAddress?: string | undefined;
@@ -35,7 +50,7 @@ interface CheckoutButtonProps {
   originalAmount?: number;
   rpcUrl?: string;
   programAuthority?: string;
-  merchantWallet?: string;
+  merchantWallet: string;
   reference?: string;
   collectionAddress : string;
   mintAddress: string
@@ -50,9 +65,9 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   originalAmount = 100,
   purchaseDescription,
   discountPercentage,
-  rpcUrl = "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d",
-  programAuthority = "CmMdpyDEuXbB9tbot1XaSNrvLq8q15HQGtbkBMMS65kc",
-  merchantWallet = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ",
+  rpcUrl ,
+  programAuthority ,
+  merchantWallet,
   reference
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +75,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [organisation, setOrganisation] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  // const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [showQrCode, setShowQrCode] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [animationKey, setAnimationKey] = useState(0);
@@ -68,6 +83,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   const [showClaimOption, setShowClaimOption] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  // const [transactionSignature, setTransactionSignature] = useState<string | null>(null);
 
   // Handle initial load animation
   useEffect(() => {
@@ -76,6 +92,39 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // useEffect(() => {
+  //   let intervalId: NodeJS.Timeout;
+
+  //   const verifyTransaction = async () => {
+  //     if (!transactionSignature || !rpcUrl) return;
+
+  //     try {
+  //       const connection = new Connection(rpcUrl);
+  //       const status = await connection.getSignatureStatus(transactionSignature);
+        
+  //       if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+  //         setPaymentStatus('success');
+  //         clearInterval(intervalId);
+  //         setTimeout(() => {
+  //           resetCheckout();
+  //         }, 3000);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error verifying transaction:', error);
+  //     }
+  //   };
+
+  //   if (transactionSignature) {
+  //     intervalId = setInterval(verifyTransaction, 2000); // Check every 2 seconds
+  //   }
+
+  //   return () => {
+  //     if (intervalId) {
+  //       clearInterval(intervalId);
+  //     }
+  //   };
+  // }, [transactionSignature, rpcUrl]);
 
   const handleCheckout = async () => {
     if (!walletAddress) {
@@ -89,6 +138,12 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
     setClaimSuccess(false);
     
     try {
+      if (!rpcUrl) {
+        throw new Error('RPC URL is required');
+      }
+      if (!programAuthority) {
+        throw new Error('Program authority is required');
+      }
       // Create UMI instance
       const umi = createUmi(rpcUrl);
       
@@ -119,13 +174,12 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
 
       // Calculate discount based on loyalty passes
      
-      let loyaltyPass = null;
+      let loyaltyPass: LoyaltyPassDetails | null = null;
       let canClaimPass = false;
       
       if (passes && passes.length > 0) {
         // Use the first loyalty pass found
-        loyaltyPass = passes[0];
-        discountPercentage ; // Example: 10% discount for having a loyalty pass
+        loyaltyPass = { name: passes[0].name };
       } else {
         // No passes found, user can claim one
         canClaimPass = true;
@@ -134,7 +188,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       const discountAmount = (originalAmount * discountPercentage) / 100;
       const newAmount = originalAmount - discountAmount;
 
-      const details = {
+      const details: CheckoutDetails = {
         originalAmount,
         newAmount,
         discountAmount,
@@ -169,6 +223,12 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
     setError(null);
     
     try {
+      if (!rpcUrl) {
+        throw new Error('RPC URL is required');
+      }
+      if (!programAuthority) {
+        throw new Error('Program authority is required');
+      }
       // Create UMI instance
       const umi = createUmi(rpcUrl);
       
@@ -191,10 +251,10 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // After claiming, re-check for passes and update checkout details
-      const passes = await getWalletLoyaltyPasses(
-        context, 
-        walletAddress ? publicKey(walletAddress) : publicKey(programAuthority)
-      );
+      // const passes = await getWalletLoyaltyPasses(
+      //   context, 
+      //   walletAddress ? publicKey(walletAddress) : publicKey(programAuthority)
+      // );
 
       // Simulate successful claim by updating state
       if (checkoutDetails) {
@@ -208,7 +268,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
           discountAmount,
           discountPercentage,
           loyaltyPassFound: true,
-          loyaltyPassDetails: { name: 'New Loyalty Pass', type: 'Standard' },
+          loyaltyPassDetails: { name: 'New Loyalty Pass' },
           canClaimPass: false
         };
 
@@ -226,136 +286,166 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
     }
   };
 
-  // Generate Solana Pay URL
-  const generateUrl = async (
-    recipient: PublicKey,
-    amount: BigNumber,
-    reference: PublicKey | undefined,
-    label: string,
-    message: string,
-    memo: string
-  ) => {
-    console.log('1. Create a payment request link');
-    const urlParams: any = { 
-      recipient, 
-      amount, 
-      label, 
-      message, 
-      memo,
-      'spl-token': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC token mint address
-    };
-    
-    if (reference) {
-      urlParams.reference = [reference];
-    }
-    
-    const url: URL = encodeURL(urlParams);
-    console.log('Payment request link:', url);
-    return url;
+ // Generate Solana Pay URL   
+const generateUrl = async (
+  recipient: PublicKey,
+  amount: BigNumber,
+  reference: PublicKey | undefined,
+  label: string,
+  message: string,
+  memo: string
+) => {
+  console.log('1. Create a payment request link');
+  
+  const urlParams: SolanaPayUrlParams = {
+    recipient,
+    amount,
+    label,
+    message,
+    memo,
+    'spl-token': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC token mint address
   };
+       
+  if (reference) {
+    urlParams.reference = [reference];
+  }
+            
+  const url: URL = encodeURL(urlParams);
+  console.log('Payment request link:', url);
+  return url;
+};
 
-  const generateSolanaPayQR = async (amount: number) => {
-    try {
-      const recipient = new PublicKey(merchantWallet);
-      const amount_usdc = amount; // Amount is already in USDC
-      const referenceKey = reference ? new PublicKey(reference) : undefined;
+
+ const generateSolanaPayQR = async (amount: number) => {
+  try {
+    const recipient = new PublicKey(merchantWallet);
+    const amount_usdc = amount; // Amount is already in USDC
+    const referenceKey = reference ? new PublicKey(reference) : undefined;
+           
+    const url = await generateUrl(
+      recipient,
+      new BigNumber(amount_usdc),
+      referenceKey,
+      organisation || 'Merchant',
+      `Payment for ${purchaseDescription || 'Merchant'}`,
+      `Order-${Date.now()}`
+    );
+
+    // setPaymentUrl(url.toString());
+    const qr = createQR(url, 300, 'transparent');
+    const qrBlob = await qr.getRawData('png');
+           
+    if (qrBlob) {
+      const qrUrl = URL.createObjectURL(qrBlob);
+      setQrCode(qrUrl);
+      setShowQrCode(true);
+      setPaymentStatus('pending');
+      setAnimationKey(prev => prev + 1);
+    }
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    setError('Failed to generate payment QR code. Please try again.');
+  }
+};
+
+const finalizeCheckout = async () => {
+  if (checkoutDetails) {
+    await generateSolanaPayQR(checkoutDetails.newAmount);
+  }
+};
+
+  // const handleVerifyClick = async () => {
+  //   const reference = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ";
+  //   const rpcUrl = "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d";
+    
+  //   if (!merchantWallet) {
+  //     setError('Merchant wallet address is required');
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setError(null);
+    
+  //   try {
+  //     const connection = new Connection(rpcUrl);
+  //     const merchantPubkey = new PublicKey(merchantWallet);
       
-      const url = await generateUrl(
-        recipient,
-        new BigNumber(amount_usdc),
-        referenceKey,
-        organisation || 'Merchant',
-        `Payment for ${purchaseDescription || 'Merchant'}`,
-        `Order-${Date.now()}`
-      );
-
-      setPaymentUrl(url.toString());
-
-      const qr = createQR(url, 300, 'transparent');
-      const qrBlob = await qr.getRawData('png');
+  //     // Get initial balance
+  //     const initialBalance = await connection.getBalance(merchantPubkey);
       
-      if (qrBlob) {
-        const qrUrl = URL.createObjectURL(qrBlob);
-        setQrCode(qrUrl);
-        setShowQrCode(true);
-        setPaymentStatus('pending');
-        setAnimationKey(prev => prev + 1);
-      }
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      setError('Failed to generate payment QR code. Please try again.');
-    }
-  };
+  //     // Check for balance changes
+  //     const checkBalance = async () => {
+  //       const currentBalance = await connection.getBalance(merchantPubkey);
+  //       if (currentBalance > initialBalance) {
+  //         setPaymentStatus('success');
+  //         const transactionObject = {
+  //           status: 'verified',
+  //           merchantAddress: merchantWallet,
+  //           amount: checkoutDetails?.newAmount,
+  //           timestamp: new Date().toISOString(),
+  //           balanceChange: currentBalance - initialBalance,
+  //           organizationName: organisation,
+  //           receipt: {
+  //             transactionId: reference,
+  //             amount: checkoutDetails?.newAmount,
+  //             currency: 'USDC',
+  //             date: new Date().toISOString(),
+  //             merchant: organisation,
+  //             loyaltyDiscount: checkoutDetails?.discountAmount || 0
+  //           }
+  //         };
+          
+  //         console.log('Payment Receipt:', transactionObject);
+          
+  //         setTimeout(() => {
+  //           resetCheckout();
+  //         }, 3000);
+  //         return true;
+  //       }
+  //       return false;
+  //     };
 
-  const finalizeCheckout = async () => {
-    if (checkoutDetails) {
-      await generateSolanaPayQR(checkoutDetails.newAmount);
-    }
-  };
+  //     // Check immediately
+  //     if (await checkBalance()) {
+  //       return;
+  //     }
 
-  const handleVerifyClick = async () => {
-    if (!reference) {
-      setError('Please generate a payment order first');
-      return;
-    }
+  //     // Set up polling
+  //     const intervalId = setInterval(async () => {
+  //       if (await checkBalance()) {
+  //         clearInterval(intervalId);
+  //       }
+  //     }, 2000);
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const res = await fetch(`/api/pay?reference=${reference}`);
-      const { status, transaction } = await res.json();
+  //     // Clear interval after 2 minutes (timeout)
+  //     setTimeout(() => {
+  //       clearInterval(intervalId);
+  //       if (paymentStatus !== 'success') {
+  //         setPaymentStatus('not-verified');
+  //         setTimeout(() => {
+  //           setPaymentStatus('pending');
+  //         }, 3000);
+  //       }
+  //     }, 120000);
 
-      if (status === 'verified') {
-        setPaymentStatus('success');
-        
-        const transactionObject = {
-          status: 'verified',
-          reference: reference,
-          amount: checkoutDetails?.newAmount,
-          timestamp: new Date().toISOString(),
-          transaction: transaction,
-          organizationName: organisation,
-          receipt: {
-            transactionId: transaction?.signature || 'N/A',
-            amount: checkoutDetails?.newAmount,
-            currency: 'USDC',
-            date: new Date().toISOString(),
-            merchant: organisation,
-            loyaltyDiscount: checkoutDetails?.discountAmount || 0
-          }
-        };
-        
-        console.log('Transaction Receipt:', transactionObject);
-        
-        setTimeout(() => {
-          resetCheckout();
-        }, 3000);
-        
-      } else {
-        setPaymentStatus('not-verified');
-        setTimeout(() => {
-          setPaymentStatus('pending');
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Error verifying payment:', error);
-      setError('Error verifying payment. Please try again.');
-      setPaymentStatus('not-verified');
-      setTimeout(() => {
-        setPaymentStatus('pending');
-      }, 3000);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //   } catch (error) {
+  //     console.error('Error verifying payment:', error);
+  //     setError('Error verifying payment. Please try again.');
+  //     setPaymentStatus('not-verified');
+  //     setTimeout(() => {
+  //       setPaymentStatus('pending');
+  //     }, 3000);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const resetCheckout = () => {
     setCheckoutDetails(null);
     setError(null);
     setShowQrCode(false);
     setQrCode(null);
-    setPaymentUrl(null);
+    // setPaymentUrl(null);
     setPaymentStatus('pending');
     setShowClaimOption(false);
     setClaimSuccess(false);
@@ -425,7 +515,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
             <h3 className="text-lg font-semibold mb-3">Scan to Pay or Click Pay Now</h3>
             
             <div className="flex justify-center mb-4">
-              <img 
+              <Image 
                 src={qrCode} 
                 alt="Solana Pay QR Code" 
                 className="w-64 h-64 border rounded-lg animate-[fadeIn_0.8s_ease-out_0.3s_both]"
@@ -439,7 +529,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
                 </span>
               </div>
               <div className="text-gray-500">
-                Scan QR code with your Solana wallet or click "Pay Now" to open in your wallet app
+                Scan QR code with your Solana wallet or click &quot;Pay Now&quot; to open in your wallet app
               </div>
             </div>
 
@@ -471,7 +561,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
           
           <div className="flex gap-2">
             <button
-              onClick={handleVerifyClick}
+              // onClick={handleVerifyClick}
               disabled={isLoading || paymentStatus === 'success'}
               className="flex-1 bg-[#0077D4] text-white py-3 rounded-lg text-sm font-semibold hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
             >
@@ -532,9 +622,9 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
           className={`w-full space-y-4 ${dropdownAnimation}`}
         >
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-lg font-semibold mb-3">Checkout Details</h3>
+            <h3 className="text-[16px] font-semibold mb-3">Checkout Details</h3>
             
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-[12px]">
               <div className="flex justify-between">
                 <span className="text-gray-600">Organization:</span>
                 <span className="font-medium">{organisation}</span>
@@ -605,7 +695,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({
               
               <hr className="my-2" />
               
-              <div className="flex justify-between text-lg font-semibold">
+              <div className="flex justify-between text-[16px] font-semibold">
                 <span>Final Amount:</span>
                 <span className={checkoutDetails.loyaltyPassFound ? 'text-green-600 flex items-center gap-1' : ''}>
                   ${checkoutDetails.newAmount.toFixed(2)}

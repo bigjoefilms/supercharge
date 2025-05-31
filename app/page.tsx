@@ -6,7 +6,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import CheckoutButton from "@/components/CheckoutButton"; 
 import Logo from "@/public/supermigrate.png"
 import localFont from 'next/font/local'
-import verxioLogo from "@/public/verxio-logo.jpg";
+// import verxioLogo from "@/public/verxio-logo.jpg";
  
 const quanta = localFont({
   src: './QuantaGroteskProBold.otf',
@@ -49,7 +49,7 @@ const Page = () => {
               </h1>
               
             </div>
-            <h1 className="text-[14px] py-3">
+            <h1 className="text-[14px] py-2">
                 Try out Demo
               </h1>
 
@@ -57,9 +57,10 @@ const Page = () => {
               walletAddress={address}
               collectionAddress="HDArn9La3DbPWaVPxAkyqyHfJ644wmgLUfPo132HBADd"
               mintAddress="B9yLURHdYh8iv8GaPC4cd8NnXLGmCYXJstbRr1o9NXyr"
-              originalAmount={10}
+              originalAmount={1}
               discountPercentage={10}
-              purchaseDescription="Solana mobile "
+              merchantWallet="6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ"
+              purchaseDescription="Solana mobile"
               rpcUrl="https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d" // Replace with your RPC URL
               programAuthority="CmMdpyDEuXbB9tbot1XaSNrvLq8q15HQGtbkBMMS65kc" // Replace with actual program authority
             />
