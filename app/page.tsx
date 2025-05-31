@@ -40,7 +40,7 @@ const Page = () => {
           </span>
         </header>
 
-        <div className="flex items-center justify-center h-[80vh] flex-col">
+        <div className="flex items-center justify-center h-full md:h-[80vh] flex-col">
           <div className="w-full max-w-[500px] flex flex-col gap-4">
             <div className={`text-2xl font-semibold mb-6 ${quanta.className} `}>
               <h1>SuperCharge your Products</h1>
