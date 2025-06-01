@@ -517,8 +517,10 @@ const finalizeCheckout = async () => {
             <div className="flex justify-center mb-4">
               <Image 
                 src={qrCode} 
+                width={256}
+                height={256}
                 alt="Solana Pay QR Code" 
-                className="w-64 h-64 border rounded-lg animate-[fadeIn_0.8s_ease-out_0.3s_both]"
+                className="border rounded-lg animate-[fadeIn_0.8s_ease-out_0.3s_both]"
               />
             </div>
             
