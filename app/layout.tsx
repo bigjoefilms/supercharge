@@ -4,25 +4,29 @@ import "./globals.css";
 import ContextProvider from '@/context'
 import localFont from 'next/font/local'
 
-const telegraf = localFont({
-  src: [
-    {
-      path: './TelegrafBold.otf',
-      weight: '700',
-      style: 'bold',
-    },
-    {
-      path: './Telegrafglight.otf',
-      weight: '300',
-      style: 'thin',
-    },
-    {
-      path: './TelegrafReguler.otf',
-      weight: '400',
-      style: 'normal',
-    }
-  ],
-})
+// const telegraf = localFont({
+//   src: [
+//     {
+//       path: './fonts/TelegrafBold.otf',
+//       weight: '700',
+//       style: 'bold',
+//     },
+//     {
+//       path: './fonts/Telegrafglight.otf',
+//       weight: '300',
+//       style: 'thin',
+//     },
+//     {
+//       path: './fonts/TelegrafReguler.otf',
+//       weight: '400',
+//       style: 'normal',
+//     }
+//   ],
+// })
+
+// export const quanta = localFont({
+//   src: './fonts/QuantaGroteskProBold.otf',
+// })
 
 
 
@@ -39,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${telegraf.className} tracking-[0.01em]`}
+        className={`tracking-[0.01em]`}
       >
          <ContextProvider>  {children}</ContextProvider>
       </body>
