@@ -20,6 +20,11 @@ export async function GET(request, { params }) {
           memo: data.memo,
           merchant_wallet_address: data.merchant_wallet_address,
           redirectUrl: data.redirectUrl,
+          collectionAddress: data.collectionAddress,
+          mintAddress: data.mintAddress,
+          programAuthority: data.programAuthority,
+          reward: data.reward,
+          points: data.points
         }
       }), { status: 200 });
     } catch (err) {

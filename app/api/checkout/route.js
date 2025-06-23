@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(request) {
   await dbConnect();
   const body = await request.json();
-  const { amount, label, message, memo, merchant_wallet_address, redirectUrl } = body;
+  const { amount, label, message, memo, merchant_wallet_address, redirectUrl, collectionAddress, mintAddress, programAuthority, reward, points} = body;
   const id = uuidv4();
 
   try {
@@ -17,6 +17,11 @@ export async function POST(request) {
       memo,
       merchant_wallet_address,
       redirectUrl,
+      collectionAddress,
+      mintAddress,
+      programAuthority,
+      reward,
+      points
     });
 
     return new Response(JSON.stringify({ success: true, id: newCheckout.id }), { status: 201 });

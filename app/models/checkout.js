@@ -8,6 +8,11 @@ const CheckoutSchema = new mongoose.Schema({
   memo: String,
   merchant_wallet_address: String,
   redirectUrl: String,
+  collectionAddress: String,
+  mintAddress: String,
+  programAuthority: String,
+  reward: String,
+  points: Number,
   createdAt: { type: Date, default: Date.now },
 });
 
