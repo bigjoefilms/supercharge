@@ -10,6 +10,15 @@ import usdcIcon from "@/public/usdc.png";
 import logoIcon from "@/public/logo.png";
 import { ToastContainer, toast } from "react-toastify";
 import {
+  initializeVerxio,
+  getWalletLoyaltyPasses,
+  getProgramDetails,
+  getAssetData,
+  issueLoyaltyPass,
+} from "@verxioprotocol/core";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { publicKey, generateSigner, signerIdentity } from "@metaplex-foundation/umi";
+import {
   useAppKit,
   useAppKitAccount,
   useAppKitProvider,
@@ -53,6 +62,7 @@ const Page = () => {
   );
   const commitment: Commitment = "processed";
   const [paymentStatus, setPaymentStatus] = useState(false);
+  const [loyal, setLoyal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Data | null>(null);
   const amount = 1;
@@ -60,6 +70,15 @@ const Page = () => {
   const message = "Thanks for the coffee!";
   const memo = "Order #12345";
   const reference = new Keypair().publicKey;
+  const collectionAddress = "HDArn9La3DbPWaVPxAkyqyHfJ644wmgLUfPo132HBADd";
+  const mintAddress = "B9yLURHdYh8iv8GaPC4cd8NnXLGmCYXJstbRr1o9NXyr";
+  const originalAmount = 1;
+  const discountPercentage = 10;
+  const merchantWallet = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ";
+  const purchaseDescription = "Solana mobile";
+  const rpcUrl =
+    "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d";
+  const programAuthority = "CmMdpyDEuXbB9tbot1XaSNrvLq8q15HQGtbkBMMS65kc";
 
   const CreateTransfer = async () => {
     setIsLoading(true);
@@ -143,17 +162,76 @@ const Page = () => {
     open();
   };
 
+  const handleClaimLoyaltyPass = async () => {
+    try {
+      if (!address || !wallet || !data?.merchant_wallet_address) {
+        console.error("No wallet address or merchant data available");
+        return;
+      }
+
+      // Create UMI instance
+      const umi = createUmi(rpcUrl);
+      console.log(umi)
+      const updateAuthority = generateSigner(umi);
+      
+      // Set the signer identity on UMI
+      umi.use(signerIdentity(updateAuthority));
+
+      // Initialize program
+      const context = initializeVerxio(umi, publicKey(programAuthority));
+      context.collectionAddress = publicKey(collectionAddress);
+      const assetData = await getProgramDetails(context);
+      console.log(assetData);
+
+      const result = await issueLoyaltyPass(context, {
+        collectionAddress: context.collectionAddress,
+        recipient: publicKey(address),
+        passName: assetData?.name || "Coffee Rewards Pass",
+        passMetadataUri: assetData?.uri || "https://arweave.net/...",
+        updateAuthority: updateAuthority,
+      });
+
+      console.log(result);
+      console.log("Claiming loyalty pass for wallet:", address);
+    } catch (err) {
+      console.error("Claim error:", err);
+      //   setError('Failed to claim loyalty pass. Please try again.');
+    } finally {
+    }
+  };
+
   const shortenAddress = (address: string | undefined) => {
     if (!address) return "";
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
   const loadData = async () => {
+    const umi = createUmi(rpcUrl);
+    // Initialize program
+    const context = initializeVerxio(umi, publicKey(programAuthority));
+    context.collectionAddress = publicKey(collectionAddress);
+    console.log(context);
+
+    const passes = await getWalletLoyaltyPasses(
+      context,
+      address ? publicKey(address) : publicKey(programAuthority)
+    );
+     
+    if (passes) {
+       
+        setLoyal(true);
+
+    }
+    else{
+        setLoyal(false)
+    }
+    console.log("Loyalty passes found:", passes);
+    
     setIsLoading(true);
     try {
       console.log("loading data", params.slug);
       const res = await fetch(
-        `http://localhost:3000/api/checkout/${params.slug}`
+        `http://localhost:3002/api/checkout/${params.slug}`
       );
       if (!res.ok) {
         console.log("Failed to fetch users");
@@ -196,7 +274,21 @@ const Page = () => {
           />
           <div className="flex-col w-full">
             <h1 className="font-bold text-[14px]  to-blue-600 mt-[10px] flex justify-between pb-1">
-              SUPERCHARGE CHECKOUT{" "}
+              <div className=" flex items-center">
+                {" "}
+                SUPERCHARGE CHECKOUT{" "}
+                {loyal ? (
+                  <span className="text-[8px] bg-green-400 text-[#fff] px-[4px] py-[1px] ml-[8px] rounded-[8px]">
+                    LOYAL
+                  </span>
+                ) : (
+                  <span className="text-[8px] bg-red-400 text-[#fff] px-[4px] py-[1px] ml-[8px] rounded-[8px]">
+                    {" "}
+                    NOT LOYAL{" "}
+                  </span>
+                )}
+              </div>
+
               <span
                 className="cursor-pointer bg-blue-700 text-[#fff] px-[5px] py-[5px] rounded-[8px] text-[11px] font-light"
                 onClick={handleConnectWallet}
@@ -206,26 +298,31 @@ const Page = () => {
             </h1>
             <div className="flex items-start md:items-center font-light text-[12px] md:text-[12px] opacity-80 gap-1 sm:flex-row flex-col ">
               <p className=" flex items-center justify-center">
-                Use the payment methods to pay
+                Use the payment method to pay
               </p>
               <span className="flex items-center gap-1">
                 {`$${data?.amount} USDC`}{" "}
-                <Image src={usdcIcon} width={15} height={15} alt="padlockicon" />{" "}
+                <Image
+                  src={usdcIcon}
+                  width={15}
+                  height={15}
+                  alt="padlockicon"
+                />{" "}
                 to {data?.label}
               </span>
             </div>
             {!paymentStatus && (
               <div>
                 <button
-                  className="bg-[#cacaca33] px-[10px] py-[12px] cursor-pointer my-2 flex items-center gap-2 text-[#555555] hover:opacity-75 w-full"
+                  className="bg-[#cacaca33] px-[10px] py-[12px] cursor-pointer my-2 flex items-center gap-2 text-[#6f6e6e] hover:opacity-75 w-full text-[13px]"
                   onClick={() => CreateTransfer()}
                   disabled={isLoading}
                 >
                   Pay with Solana wallet
                   <Image
                     src={solanapayIcon}
-                    width={20}
-                    height={20}
+                    width={15}
+                    height={15}
                     alt="solanapayIcon"
                   />
                 </button>
@@ -258,15 +355,28 @@ const Page = () => {
 
               {paymentStatus && (
                 <Link href={`${data?.redirectUrl}`}>
-                <button className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer ">
-                  {" "}
-                  Back to Merchant
-                </button>
+                  <button className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer ">
+                    {" "}
+                    Back to Merchant
+                  </button>
                 </Link>
               )}
+
+              <button
+                onClick={handleClaimLoyaltyPass}
+                className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer "
+              >
+                {" "}
+                Claim loyalty pass
+              </button>
             </div>
             <section className="flex items-center gap-3 font-light justify-center mt-[50px] text-[14px]">
-              <Image src={padlockIcon} width={20} height={20} alt="padlockicon" />
+              <Image
+                src={padlockIcon}
+                width={20}
+                height={20}
+                alt="padlockicon"
+              />
 
               <div className="flex gap-1">
                 secured by{" "}
