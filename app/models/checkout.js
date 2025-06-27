@@ -13,6 +13,8 @@ const CheckoutSchema = new mongoose.Schema({
   programAuthority: String,
   reward: String,
   points: Number,
+  email: String,
+ loyalty: { type: Object, default: {},},
   createdAt: { type: Date, default: Date.now },
 });
 

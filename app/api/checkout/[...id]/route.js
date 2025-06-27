@@ -24,7 +24,9 @@ export async function GET(request, { params }) {
           mintAddress: data.mintAddress,
           programAuthority: data.programAuthority,
           reward: data.reward,
-          points: data.points
+          points: data.points,
+          email: data.email,
+          loyalty: data.loyalty,
         }
       }), { status: 200 });
     } catch (err) {
