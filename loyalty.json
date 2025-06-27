@@ -1,0 +1,6 @@
+{
+    "rpcUrl": "https://api.mainnet-beta.solana.com",
+    "programAuthority": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "feePayerKeypair": "5KJvsngHeMgenTuAiGXUHfnWeSWEqfwtEDALDdTzhotXvNzMiKzj..."
+  
+}

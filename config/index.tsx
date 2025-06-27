@@ -26,7 +26,9 @@ export const metadata = {
 
 export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [solana, solanaTestnet, solanaDevnet]
 
-// Set up Solana Adapter
 export const solanaWeb3JsAdapter = new SolanaAdapter({
-  wallets: [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
+  wallets: [
+    new PhantomWalletAdapter(), 
+    new SolflareWalletAdapter() as any
+  ]
 })

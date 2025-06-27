@@ -1,23 +1,28 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import padlockIcon from "@/public/padlock.png";
 import Image from "next/image";
+import padlockIcon from "@/public/padlock.png";
 import solanapayIcon from "@/public/solana.svg";
 import checkIcon from "@/public/check.png";
-import warningIcon from "@/public/warning.png";
-import closeIcon from "@/public/close.png";
+// import warningIcon from "@/public/warning.png";
+// import closeIcon from "@/public/close.png";
 import usdcIcon from "@/public/usdc.png";
-import logoIcon from "@/public/logo.png";
+import logoIcon from "@/public/verxio-logo.jpg";
+import { quanta } from "@/app/fonts";
 import { ToastContainer, toast } from "react-toastify";
 import {
   initializeVerxio,
   getWalletLoyaltyPasses,
   getProgramDetails,
-  getAssetData,
+  // getAssetData,
   issueLoyaltyPass,
 } from "@verxioprotocol/core";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { publicKey, generateSigner, signerIdentity } from "@metaplex-foundation/umi";
+import {
+  publicKey,
+  generateSigner,
+  signerIdentity,
+} from "@metaplex-foundation/umi";
 import {
   useAppKit,
   useAppKitAccount,
@@ -26,7 +31,7 @@ import {
 import {
   Connection,
   PublicKey,
-  Keypair,
+  // Keypair,
   Transaction,
   Commitment,
   ParsedAccountData,
@@ -37,7 +42,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 import type { Provider } from "@reown/appkit-adapter-solana/react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 
 interface Data {
@@ -53,7 +58,7 @@ const Page = () => {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const wallet = address ? new PublicKey(address) : null;
-  const router = useRouter();
+  // const router = useRouter();
   const params = useParams();
   const { walletProvider } = useAppKitProvider<Provider>("solana");
   const connection = new Connection(
@@ -66,24 +71,28 @@ const Page = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Data | null>(null);
   const amount = 1;
-  const label = "Coffee Purchase ";
-  const message = "Thanks for the coffee!";
-  const memo = "Order #12345";
-  const reference = new Keypair().publicKey;
-  const collectionAddress = "HDArn9La3DbPWaVPxAkyqyHfJ644wmgLUfPo132HBADd";
-  const mintAddress = "B9yLURHdYh8iv8GaPC4cd8NnXLGmCYXJstbRr1o9NXyr";
-  const originalAmount = 1;
-  const discountPercentage = 10;
-  const merchantWallet = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ";
-  const purchaseDescription = "Solana mobile";
+  // const label = "Coffee Purchase ";
+  // const message = "Thanks for the coffee!";
+  // const memo = "Order #12345";
+  // const reference = new Keypair().publicKey;
+
+  // const originalAmount = 1;
+  // const discountPercentage = 10;
+  // const merchantWallet = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ";
+  // const purchaseDescription = "Solana mobile";
+  const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
   const rpcUrl =
     "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d";
   const programAuthority = "CmMdpyDEuXbB9tbot1XaSNrvLq8q15HQGtbkBMMS65kc";
+  const collectionAddress = "HDArn9La3DbPWaVPxAkyqyHfJ644wmgLUfPo132HBADd";
+  // const mintAddress = "B9yLURHdYh8iv8GaPC4cd8NnXLGmCYXJstbRr1o9NXyr";
 
   const CreateTransfer = async () => {
     setIsLoading(true);
-    if (!wallet) {
+    if (!wallet || !isConnected || !walletProvider) {
       setPaymentStatus(false);
+      toast.error("Please connect your wallet.");
+      setIsLoading(false);
       return;
     }
     try {
@@ -114,7 +123,7 @@ const Page = () => {
       const decimals =
         (mintInfo.value?.data as ParsedAccountData)?.parsed?.info?.decimals ||
         0;
-      const amounts = amount! * Math.pow(10, decimals);
+      // const amounts = amount! * Math.pow(10, decimals);
 
       tx.add(
         createTransferCheckedInstruction(
@@ -160,6 +169,23 @@ const Page = () => {
 
   const handleConnectWallet = async () => {
     open();
+    const umi = createUmi(rpcUrl);
+    // Initialize program
+    const context = initializeVerxio(umi, publicKey(programAuthority));
+    context.collectionAddress = publicKey(collectionAddress);
+    console.log(context);
+
+    if (!address) {
+      console.error("No wallet address available");
+      return;
+    }
+    // const passes = await getAssetData(context, publicKey(address));
+    const passes = await getWalletLoyaltyPasses(context, publicKey(address));
+
+    console.log(passes);
+
+    setLoyal(Array.isArray(passes) && passes.length > 0);
+    console.log("Loyalty passes found:", passes);
   };
 
   const handleClaimLoyaltyPass = async () => {
@@ -171,9 +197,9 @@ const Page = () => {
 
       // Create UMI instance
       const umi = createUmi(rpcUrl);
-      console.log(umi)
+      console.log(umi);
       const updateAuthority = generateSigner(umi);
-      
+
       // Set the signer identity on UMI
       umi.use(signerIdentity(updateAuthority));
 
@@ -206,33 +232,10 @@ const Page = () => {
   };
 
   const loadData = async () => {
-    const umi = createUmi(rpcUrl);
-    // Initialize program
-    const context = initializeVerxio(umi, publicKey(programAuthority));
-    context.collectionAddress = publicKey(collectionAddress);
-    console.log(context);
-
-    const passes = await getWalletLoyaltyPasses(
-      context,
-      address ? publicKey(address) : publicKey(programAuthority)
-    );
-     
-    if (passes) {
-       
-        setLoyal(true);
-
-    }
-    else{
-        setLoyal(false)
-    }
-    console.log("Loyalty passes found:", passes);
-    
     setIsLoading(true);
     try {
       console.log("loading data", params.slug);
-      const res = await fetch(
-        `http://localhost:3002/api/checkout/${params.slug}`
-      );
+      const res = await fetch(`${BASE_URL}/api/checkout/${params.slug}`);
       if (!res.ok) {
         console.log("Failed to fetch users");
         setIsLoading(false);
@@ -272,11 +275,12 @@ const Page = () => {
             pauseOnHover
             theme="dark"
           />
+
           <div className="flex-col w-full">
             <h1 className="font-bold text-[14px]  to-blue-600 mt-[10px] flex justify-between pb-1">
-              <div className=" flex items-center">
+              <div className={` ${quanta.className}flex items-center`}>
                 {" "}
-                SUPERCHARGE CHECKOUT{" "}
+                Supercharge Checkout{" "}
                 {loyal ? (
                   <span className="text-[8px] bg-green-400 text-[#fff] px-[4px] py-[1px] ml-[8px] rounded-[8px]">
                     LOYAL
@@ -332,27 +336,16 @@ const Page = () => {
             <div className="flex items-center justify-center  "></div>
 
             <div className="py-7">
-              {paymentStatus && <Success price={amount} organisation={label} />}
+              {paymentStatus && (
+                <Success
+                  price={data?.amount ?? null}
+                  organisation={data?.label ?? null}
+                />
+              )}
             </div>
             {/* <Error/> */}
 
             <div className="flex items-center justify-center gap-4">
-              {/* {!paymentStatus && (
-                <button
-                  onClick={loadData}
-                  className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer "
-                >
-                  {" "}
-                  <Image
-                    src={closeIcon}
-                    width={11}
-                    height={11}
-                    alt="padlockicon"
-                  />{" "}
-                  Cancel Payment
-                </button>
-              )} */}
-
               {paymentStatus && (
                 <Link href={`${data?.redirectUrl}`}>
                   <button className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer ">
@@ -361,28 +354,28 @@ const Page = () => {
                   </button>
                 </Link>
               )}
-
-              <button
-                onClick={handleClaimLoyaltyPass}
-                className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer "
-              >
-                {" "}
-                Claim loyalty pass
-              </button>
+              {paymentStatus && (
+                <button
+                  onClick={handleClaimLoyaltyPass}
+                  className="flex items-center  gap-1 py-[5px] text-[13px] justify-center bg-[#cacaca33]  rounded-[8px]  w-[140px] mt-[20px] font-light cursor-pointer "
+                >
+                  {" "}
+                  Claim loyalty pass
+                </button>
+              )}
             </div>
             <section className="flex items-center gap-3 font-light justify-center mt-[50px] text-[14px]">
               <Image
                 src={padlockIcon}
-                width={20}
-                height={20}
+                width={12}
+                height={12}
                 alt="padlockicon"
               />
 
-              <div className="flex gap-1">
-                secured by{" "}
+              <div className="flex gap-1 items-center text-[11px]">
+                secured by
                 <span className="font-bold text-blue-700 flex items-center gap-1 ">
-                  supercharge
-                  <Image src={logoIcon} width={20} height={20} alt="Logoicon" />
+                  <Image src={logoIcon} width={50} height={50} alt="Logoicon" />
                 </span>
               </div>
             </section>
@@ -413,20 +406,20 @@ const Success = ({
   );
 };
 
-const Error = () => {
-  return (
-    <main className="flex flex-col items-center justify-center">
-      <Image src={warningIcon} width={80} height={80} alt="padlockicon" />
-      <h1 className="pt-[15px]  ">Payment failed</h1>
-      <p className="py-[30px] font-light text-[14px]">User cancels the order</p>
-      <div className="flex flex-col gap-3 w-full">
-        <button className="bg-[#0077D4]  py-[6px] text-[#fff] rounded-[8px] cursor-pointer">
-          Try Again
-        </button>
-        <button className="border-[#0077D4] border w-full py-[6px]  rounded-[8px] cursor-pointer">
-          Cancel
-        </button>
-      </div>
-    </main>
-  );
-};
+// const Error = () => {
+//   return (
+//     <main className="flex flex-col items-center justify-center">
+//       <Image src={warningIcon} width={80} height={80} alt="padlockicon" />
+//       <h1 className="pt-[15px]  ">Payment failed</h1>
+//       <p className="py-[30px] font-light text-[14px]">User cancels the order</p>
+//       <div className="flex flex-col gap-3 w-full">
+//         <button className="bg-[#0077D4]  py-[6px] text-[#fff] rounded-[8px] cursor-pointer">
+//           Try Again
+//         </button>
+//         <button className="border-[#0077D4] border w-full py-[6px]  rounded-[8px] cursor-pointer">
+//           Cancel
+//         </button>
+//       </div>
+//     </main>
+//   );
+// };
