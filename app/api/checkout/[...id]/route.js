@@ -1,4 +1,4 @@
-import { dbConnect } from '../../../lib/dbConnect';
+import { dbConnect } from '@/app/lib/dbConnect';
 import Checkout from '../../../models/checkout';
 // import { v4 as uuidv4 } from 'uuid';
 
