@@ -290,7 +290,7 @@ const Page = () => {
                     {" "}
                     NOT LOYAL{" "}
                   </span>
-                )}
+                )}d
               </div>
 
               <span

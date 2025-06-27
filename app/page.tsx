@@ -190,7 +190,7 @@ const Page = () => {
       } else {
         console.log("✅ Payment link created successfully:", data.id);
         setSuccess("Payment link created successfully!");
-        setLink(`${BASE_URL}/${data.id}`);
+        setLink(`${BASE_URL}/embed/${data.id}`);
         setShowQR(true);
         setTimeout(() => setSuccess(""), 5000);
       }
