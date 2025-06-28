@@ -290,28 +290,28 @@ const Page = () => {
                     {" "}
                     NOT LOYAL{" "}
                   </span>
-                )}d
+                )}
               </div>
 
               <span
-                className="cursor-pointer bg-blue-700 text-[#fff] px-[5px] py-[5px] rounded-[8px] text-[11px] font-light"
+                className="cursor-pointer bg-blue-700 text-[#fff] px-[12px] py-[5px] rounded-[8px] text-[11px] font-light"
                 onClick={handleConnectWallet}
               >
                 {isConnected ? shortenAddress(address) : "Connect wallet"}
               </span>
             </h1>
-            <div className="flex items-start md:items-center font-light text-[12px] md:text-[12px] opacity-80 gap-1 sm:flex-row flex-col ">
+            <div className="flex items-start md:items-center font-light text-[12px] md:text-[12px] opacity-80 gap-1  py-[5px]">
               <p className=" flex items-center justify-center">
                 Use the payment method to pay
               </p>
               <span className="flex items-center gap-1">
                 {`$${data?.amount} USDC`}{" "}
-                <Image
+                {/* <Image
                   src={usdcIcon}
                   width={15}
                   height={15}
                   alt="padlockicon"
-                />{" "}
+                />{" "} */}
                 to {data?.label}
               </span>
             </div>
