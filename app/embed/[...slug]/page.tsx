@@ -6,7 +6,7 @@ import solanapayIcon from "@/public/solana.svg";
 import checkIcon from "@/public/check.png";
 // import warningIcon from "@/public/warning.png";
 // import closeIcon from "@/public/close.png";
-import usdcIcon from "@/public/usdc.png";
+// import usdcIcon from "@/public/usdc.png";
 import logoIcon from "@/public/verxio-logo.jpg";
 import { quanta } from "@/app/fonts";
 import { ToastContainer, toast } from "react-toastify";
