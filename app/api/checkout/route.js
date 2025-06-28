@@ -13,7 +13,7 @@ export async function POST(request) {
     if (loyalty) {
       loyaltyObject = JSON.parse(loyalty);
     }
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ success: false, error: 'Invalid loyalty JSON format' }), {
       status: 400,
     });
