@@ -1,298 +1,282 @@
-'use client'
-
-import React, { useState } from 'react'
-import { quanta } from '../fonts'
+"use client";
+import React, { useState, ChangeEvent } from "react";
+import { PublicKey, Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useAppKitProvider, useAppKitAccount ,useAppKit} from "@reown/appkit/react";
+import type { Provider } from "@reown/appkit-adapter-solana/react";
+import { quanta } from "@/app/fonts";
+import { initializeVerxio,createLoyaltyProgram } from '@verxioprotocol/core'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import {  generateSigner } from '@metaplex-foundation/umi';
+import { publicKey } from '@metaplex-foundation/umi'
+import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import { cn } from "@/lib/utilis";
-import {
-    initializeVerxio,
-    // getWalletLoyaltyPasses,
-    // getProgramDetails,
-    // getAssetData,
-    createLoyaltyProgram,
-    // issueLoyaltyPass,
-  } from "@verxioprotocol/core";
-  import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-  import { publicKey, generateSigner, signerIdentity } from "@metaplex-foundation/umi";
+import Link from "next/link";
 
-// TypeScript interfaces
+
 interface Tier {
-  id: string
-  name: string
-  xpRequired: number
-  rewards: string[]
-  benefits: string[]
-  multiplier: number
+  name: string;
+  xpRequired: number;
+  rewards: string[];
 }
 
 interface PointsPerAction {
-  purchase: number
-  review: number
- 
+  purchase: number;
+  review: number;
+  [key: string]: number;
 }
 
-interface LoyaltyProgramMetadata {
-  organizationName: string
-  brandColor: string
-  description: string
-  logoUrl: string
-  website: string
-  contactEmail: string
-  termsAndConditions: string
+interface FormData {
+  loyaltyProgramName: string;
+  organizationName: string;
+  brandColor: string;
+  description: string;
+  tiers: Tier[];
+  pointsPerAction: PointsPerAction;
 }
 
-interface LoyaltyProgramFormData {
-  loyaltyProgramName: string
-  metadataUri: string
-  rpcUrl: string
-  programAuthority: string
-  feePayerKeypair: string
-  metadata: LoyaltyProgramMetadata
-  tiers: Tier[]
-  pointsPerAction: PointsPerAction
-  expirationEnabled: boolean
-  expirationDays: number
-  maxPointsPerDay: number
-  enableReferrals: boolean
-  referralReward: number
-}
 
-const LoyaltyProgramForm: React.FC = () => {
-  const [formData, setFormData] = useState<LoyaltyProgramFormData>({
-    loyaltyProgramName: '',
-    metadataUri: '',
-    rpcUrl: 'https://api.mainnet-beta.solana.com',
-    programAuthority: '',
-    feePayerKeypair: '',
-    metadata: {
-      organizationName: '',
-      brandColor: '#3B82F6',
-      description: '',
-      logoUrl: '',
-      website: '',
-      contactEmail: '',
-      termsAndConditions: ''
-    },
+const Create: React.FC = () => {
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<Provider>("solana");
+  const [formData, setFormData] = useState<FormData>({
+    loyaltyProgramName: "",
+    organizationName: "",
+    brandColor: "#FF5733",
+    description: "",
     tiers: [
-      {
-        id: '1',
-        name: 'Bronze',
-        xpRequired: 0,
-        rewards: ['Welcome bonus'],
-        benefits: ['Basic support'],
-        multiplier: 1
-      }
+      { name: "Bronze", xpRequired: 500, rewards: ["5% discount on purchases"] },
+      { name: "Silver", xpRequired: 1000, rewards: ["10% discount on purchases"] }
     ],
     pointsPerAction: {
       purchase: 100,
-      review: 50,
-     
-    },
-    expirationEnabled: false,
-    expirationDays: 365,
-    maxPointsPerDay: 1000,
-    enableReferrals: true,
-    referralReward: 200
-  })
+      review: 50
+    }
+  });
+  const [downloadData, setDownloadData] = useState<any | null>(null);
+  const shortenAddress = (address: string | undefined) => {
+    if (!address) return "";
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
+ 
+  const wallet = address ? new PublicKey(address) : null;
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
-  const [error, setError] = useState<string>('')
-  const programAuthority = "CmMdpyDEuXbB9tbot1XaSNrvLq8q15HQGtbkBMMS65kc";
-  const collectionAddress = "HDArn9La3DbPWaVPxAkyqyHfJ644wmgLUfPo132HBADd";
-//   const mintAddress = "B9yLURHdYh8iv8GaPC4cd8NnXLGmCYXJstbRr1o9NXyr";
-  const rpcUrl ="https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d";   
-  const handleInputChange = (field: string, value: string | number | boolean) => {
+  // Generate metadata automatically
+  const generateMetadata = async (data: FormData): Promise<string> => {
+    const metadata = {
+      name: data.loyaltyProgramName,
+      description: data.description || `${data.loyaltyProgramName} - A loyalty program by ${data.organizationName}`,
+      image: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.organizationName)}&background=${data.brandColor.replace('#', '')}&color=fff&size=400`,
+      attributes: [
+        {
+          trait_type: "Organization",
+          value: data.organizationName
+        },
+        {
+          trait_type: "Brand Color",
+          value: data.brandColor
+        },
+        {
+          trait_type: "Total Tiers",
+          value: data.tiers.length.toString()
+        },
+        {
+          trait_type: "Actions Available",
+          value: Object.keys(data.pointsPerAction).length.toString()
+        }
+      ],
+      properties: {
+        category: "loyalty_program",
+        creators: [
+          {
+            address: address,
+            verified: true,
+            share: 100
+          }
+        ]
+      },
+      tiers: data.tiers,
+      pointsPerAction: data.pointsPerAction
+    };
+
+    try {
+      // For now, we'll use a mock URL since we don't have an actual storage solution
+      return 'https://arweave.net/mock-metadata-uri';
+    } catch (error) {
+      console.error('Error generating metadata:', error);
+      throw new Error('Failed to generate metadata');
+    }
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [field]: value
-    }))
-  }
+      [name]: value
+    }));
+  };
 
-  const handleMetadataChange = (field: keyof LoyaltyProgramMetadata, value: string) => {
+  const handleTierChange = (index: number, field: keyof Tier, value: string): void => {
+    const updatedTiers = [...formData.tiers];
+    if (field === 'rewards') {
+      updatedTiers[index][field] = [value];
+    } else if (field === 'xpRequired') {
+      updatedTiers[index][field] = parseInt(value) || 0;
+    } else {
+      updatedTiers[index][field] = value;
+    }
     setFormData(prev => ({
       ...prev,
-      metadata: {
-        ...prev.metadata,
-        [field]: value
-      }
-    }))
-  }
+      tiers: updatedTiers
+    }));
+  };
 
-  const handlePointsChange = (action: keyof PointsPerAction, value: number) => {
+  const handlePointsChange = (action: string, value: string): void => {
     setFormData(prev => ({
       ...prev,
       pointsPerAction: {
         ...prev.pointsPerAction,
-        [action]: value
+        [action]: parseInt(value) || 0
       }
-    }))
-  }
+    }));
+  };
 
-  const handleTierChange = (tierId: string, field: keyof Tier, value: string | number | string[]) => {
+  const addTier = (): void => {
     setFormData(prev => ({
       ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId ? { ...tier, [field]: value } : tier
-      )
-    }))
-  }
+      tiers: [...prev.tiers, { name: "", xpRequired: 0, rewards: [""] }]
+    }));
+  };
 
-  const addTier = () => {
-    const newTier: Tier = {
-      id: Date.now().toString(),
-      name: '',
-      xpRequired: 0,
-      rewards: [''],
-      benefits: [''],
-      multiplier: 1
+  const removeTier = (index: number): void => {
+    if (formData.tiers.length > 1) {
+      const updatedTiers = formData.tiers.filter((_, i) => i !== index);
+      setFormData(prev => ({
+        ...prev,
+        tiers: updatedTiers
+      }));
     }
-    setFormData(prev => ({
-      ...prev,
-      tiers: [...prev.tiers, newTier]
-    }))
-  }
+  };
 
-  const removeTier = (tierId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tiers: prev.tiers.filter(tier => tier.id !== tierId)
-    }))
-  }
+  const handleSubmit = async (): Promise<void> => {
+    if (!isConnected || !wallet || !walletProvider) {
+      alert("Please connect your wallet first");
+      return;
+    }
 
-  const addRewardToTier = (tierId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId 
-          ? { ...tier, rewards: [...tier.rewards, ''] }
-          : tier
-      )
-    }))
-  }
+    // Check wallet balance
+    const connection = new Connection('https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d');
+    const balance = await connection.getBalance(wallet);
+    if (balance < LAMPORTS_PER_SOL * 0.1) { // Require at least 0.1 SOL
+      alert("Insufficient balance. Please ensure you have at least 0.1 SOL in your wallet.");
+      return;
+    }
 
-  const updateTierReward = (tierId: string, rewardIndex: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId 
-          ? { 
-              ...tier, 
-              rewards: tier.rewards.map((reward, index) => 
-                index === rewardIndex ? value : reward
-              )
-            }
-          : tier
-      )
-    }))
-  }
+    setLoading(true);
 
-  const addBenefitToTier = (tierId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId 
-          ? { ...tier, benefits: [...tier.benefits, ''] }
-          : tier
-      )
-    }))
-  }
-
-  const updateTierBenefit = (tierId: string, benefitIndex: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId 
-          ? { 
-              ...tier, 
-              benefits: tier.benefits.map((benefit, index) => 
-                index === benefitIndex ? value : benefit
-              )
-            }
-          : tier
-      )
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-    
     try {
-    //   // Create UMI instance
-    //   const umi = createUmi(formData.rpcUrl)
-      
-    //   // Initialize program
-    //   const context = initializeVerxio(
-    //     umi,
-    //     publicKey(formData.programAuthority)
-    //   )
-      // Create UMI instance
-      const umi = createUmi(rpcUrl);
-      console.log(umi);
-      const updateAuthority = generateSigner(umi);
-      
-      // Set the signer identity on UMI
-      umi.use(signerIdentity(updateAuthority));
+      // Create UMI instance (Solana & SVM supported)
+      const umi = createUmi('https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d')
 
       // Initialize program
-      const context = initializeVerxio(umi, publicKey(programAuthority));
-      context.collectionAddress = publicKey(collectionAddress);
-      
-      // Set signer
-    //   context.umi.use(keypairIdentity())
-      
-      
-      // Clean up tiers data
-      const cleanTiers = formData.tiers.map(tier => ({
-        name: tier.name,
-        xpRequired: tier.xpRequired,
-        rewards: tier.rewards.filter(reward => reward.trim() !== '')
-      }))
-      
-      // Create loyalty program
+      const context = initializeVerxio(
+        umi,
+        address ? publicKey(address) : publicKey('11111111111111111111111111111111'),
+      )
+
+      // Set Signer
+      if (walletProvider) {
+        context.umi.use(walletAdapterIdentity(walletProvider as any));
+      }
+
+      console.log("Creating loyalty program with Verxio...");
+      // Generate metadata URI automatically
+      console.log("Generating metadata...");
+      const metadataUri = await generateMetadata(formData);
+      console.log("Metadata URI created:", metadataUri);
+
+      // Create the loyalty program using Verxio Protocol
       const result = await createLoyaltyProgram(context, {
         loyaltyProgramName: formData.loyaltyProgramName,
-        metadataUri: formData.metadataUri,
-        programAuthority: context.programAuthority,
-        updateAuthority: generateSigner(context.umi),
+        metadataUri: metadataUri,
+        programAuthority:context.programAuthority,
+        updateAuthority: generateSigner(umi),
         metadata: {
-          organizationName: formData.metadata.organizationName,
-          brandColor: formData.metadata.brandColor,
-          description: formData.metadata.description,
-          logoUrl: formData.metadata.logoUrl,
-          website: formData.metadata.website,
-          contactEmail: formData.metadata.contactEmail,
-          termsAndConditions: formData.metadata.termsAndConditions
+          organizationName: formData.organizationName,
+          brandColor: formData.brandColor,
+          description: formData.description,
         },
-        tiers: cleanTiers,
+        tiers: formData.tiers,
+        pointsPerAction: formData.pointsPerAction,
+      });
+
+      // Save the keys for download
+      setDownloadData({
+        collection: result.collection,
+        updateAuthority: result.updateAuthority,
+      });
+
+      // In your handleSubmit function, replace the alert and success handling with:
+      console.log("🎉 Loyalty Program Created Successfully!");
+      console.log("📊 Program Details:", {
+        name: formData.loyaltyProgramName,
+        organization: formData.organizationName,
+        brandColor: formData.brandColor,
+        tiersCount: formData.tiers.length,
+        actionsConfigured: Object.keys(formData.pointsPerAction).length
+      });
+      console.log("🔗 Blockchain Result:", result);
+      console.log("📋 Full Configuration:", formData);
+      console.log("🔗 Metadata URI:", metadataUri);
+
+     
+      // Show success modal instead of alert
+    //   setShowSuccessModal(true);
+      setShowForm(false);
+      setLoading(false);
+      
+      // Reset form
+      setFormData({
+        loyaltyProgramName: "",
+        organizationName: "",
+        brandColor: "#FF5733",
+        description: "",
+        tiers: [
+          { name: "Bronze", xpRequired: 500, rewards: ["5% discount on purchases"] },
+          { name: "Silver", xpRequired: 1000, rewards: ["10% discount on purchases"] }
+        ],
         pointsPerAction: {
-            purchase:   6,
-            review: 50,
-          },
-        // pointsPerAction: formData.pointsPerAction,
-        // expirationEnabled: formData.expirationEnabled,
-        // expirationDays: formData.expirationDays,
-        // maxPointsPerDay: formData.maxPointsPerDay,
-        // enableReferrals: formData.enableReferrals,
-        // referralReward: formData.referralReward
-      })
-      
-      setResult(JSON.stringify(result))
-      console.log('Loyalty Program Created:', result)
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-      console.error('Error creating loyalty program:', err)
-    } finally {
-      setIsLoading(false)
+          purchase: 100,
+          review: 50
+        }
+      });
+
+    } catch (error) {
+      console.error("Error creating loyalty program:", error);
+      if (error instanceof Error) {
+        if (error.message.includes("Simulation failed")) {
+          alert("Transaction failed: Insufficient funds or invalid transaction. Please ensure you have enough SOL and try again.");
+        } else {
+          alert(`Failed to create loyalty program: ${error.message}`);
+        }
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+      setLoading(false);
     }
-  }
+  };
+  const handleConnectWallet = async () => {
+    open();
+  
+  };
+
 
 
   return (
-    <div className="min-h-screen  py-8 relative">
-          <div
+    <div className="flex items-center justify-center pt-[40px] relative">
+         <div
         className={cn(
           "absolute inset-0 -z-50 opacity-5",
           "[background-size:40px_40px]",
@@ -301,447 +285,242 @@ const LoyaltyProgramForm: React.FC = () => {
         )}
         style={{
           WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 60%, black 50%, transparent 100%)",
-          maskImage: "linear-gradient(to right, transparent 0%, black 60%, black 90%, transparent 100%)"
+          maskImage: "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)"
         }}
       />
-      <div className="max-w-[1440px] mx-auto px-4">
-        <div className=" overflow-hidden">
-          <div className={`${quanta.className} px-8 py-6`}>
-            <h1 className="text-3xl font-bold">Create Loyalty Program</h1>
-            <p className="mt-2">Build your custom loyalty program powered Verxio Protocol</p>
+    <div className="flex flex-col gap-2 p-2 max-w-[1440px] w-full">
+        <Link href="/">
+        <span className="text-[12px] cursor-pointer"> Back to Home</span>
+        </Link>
+      <div className={`text-2xl font-bold text-gray-800 ${quanta.className} pt-[20px] `}>Create Loyalty Program</div>
+      
+     { !showForm ? (
+        <button 
+          onClick={() => setShowForm(true)}
+          className="bg-[#0345e4] text-[#fff] px-[24px] py-[14px] rounded-2xl text-[12px] mt-[10px] cursor-pointer transition-all duration-300 ease-out hover:bg-[#fff] hover:text-[#0345e4] border-2 border-[#0345e4] w-fit"
+        >
+          Create +
+        </button>
+      ) : (
+        <div className="bg-white rounded-2xl border-gray-200 pt-5">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-[16px] font-semibold text-gray-800">New Loyalty Program</h2>
+            <div className="text-xs text-gray-500">
+            <span
+                className="cursor-pointer bg-blue-700 text-[#fff] px-[12px] py-[5px] rounded-[8px] text-[11px] font-light"
+                onClick={handleConnectWallet}
+              >
+                {isConnected ? shortenAddress(address) : "Connect wallet"}
+              </span>
+            </div>
           </div>
-          
-          <form onSubmit={handleSubmit} className="p-8 space-y-8 bg-[#fff]">
+
+          <div className="space-y-6">
             {/* Basic Information */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-gray-800 border-b-2 border-blue-200 pb-2">
-                Basic Information
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Program Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.loyaltyProgramName}
-                    onChange={(e) => handleInputChange('loyaltyProgramName', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Summer Rewards Program"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Organization Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.metadata.organizationName}
-                    onChange={(e) => handleMetadataChange('organizationName', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Coffee Brew Co."
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    RPC URL *
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.rpcUrl}
-                    onChange={(e) => handleInputChange('rpcUrl', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://api.mainnet-beta.solana.com"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Program Authority Public Key *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.programAuthority}
-                    onChange={(e) => handleInputChange('programAuthority', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter program authority public key"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fee Payer Keypair *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.feePayerKeypair}
-                    onChange={(e) => handleInputChange('feePayerKeypair', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter fee payer keypair"
-                    required
-                  />
-                </div>
-                
-             
-              </div>
-            </div>
-
-            {/* Organization Details */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-gray-800 border-b-2 border-blue-200 pb-2">
-                Organization Details
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Brand Color
-                  </label>
-                  <input
-                    type="color"
-                    value={formData.metadata.brandColor}
-                    onChange={(e) => handleMetadataChange('brandColor', e.target.value)}
-                    className="w-full h-12 border border-gray-300 rounded-lg cursor-pointer"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Logo URL
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.metadata.logoUrl}
-                    onChange={(e) => handleMetadataChange('logoUrl', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/logo.png"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.metadata.website}
-                    onChange={(e) => handleMetadataChange('website', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.metadata.contactEmail}
-                    onChange={(e) => handleMetadataChange('contactEmail', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="contact@example.com"
-                  />
-                </div>
-              </div>
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                <label className="block text-sm font-normal text-gray-700 mb-2">
+                  Program Name*
                 </label>
-                <textarea
-                  value={formData.metadata.description}
-                  onChange={(e) => handleMetadataChange('description', e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Describe your loyalty program..."
+                <input
+                  type="text"
+                  name="loyaltyProgramName"
+                  value={formData.loyaltyProgramName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[12px]"
+                  placeholder="e.g., Summer Rewards Program"
+                  required
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Terms and Conditions
+                  Organization Name*
                 </label>
-                <textarea
-                  value={formData.metadata.termsAndConditions}
-                  onChange={(e) => handleMetadataChange('termsAndConditions', e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter terms and conditions..."
+                <input
+                  type="text"
+                  name="organizationName"
+                  value={formData.organizationName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[12px]"
+                  placeholder="e.g., Coffee Brew"
+                  required
                 />
               </div>
             </div>
 
-            {/* Points Configuration */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-gray-800 border-b-2 border-blue-200 pb-2">
-                Points Configuration
-              </h2>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(formData.pointsPerAction).map(([action, points]) => (
-                  <div key={action}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {action.replace(/([A-Z])/g, ' $1').trim()}
-                    </label>
-                    <input
-                      type="number"
-                      value={points}
-                      onChange={(e) => handlePointsChange(action as keyof PointsPerAction, parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                    />
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Brand Color
+                </label>
+                <input
+                  type="color"
+                  name="brandColor"
+                  value={formData.brandColor}
+                  onChange={handleInputChange}
+                  className="w-full h-10 border border-gray-300 rounded-lg cursor-pointer"
+                />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Points Per Day
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.maxPointsPerDay}
-                    onChange={(e) => handleInputChange('maxPointsPerDay', parseInt(e.target.value) || 0)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="0"
-                  />
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="enableReferrals"
-                    checked={formData.enableReferrals}
-                    onChange={(e) => handleInputChange('enableReferrals', e.target.checked)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="enableReferrals" className="text-sm font-medium text-gray-700">
-                    Enable Referrals
-                  </label>
-                </div>
-                
-                {formData.enableReferrals && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Referral Reward Points
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.referralReward}
-                      onChange={(e) => handleInputChange('referralReward', parseInt(e.target.value) || 0)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="expirationEnabled"
-                    checked={formData.expirationEnabled}
-                    onChange={(e) => handleInputChange('expirationEnabled', e.target.checked)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="expirationEnabled" className="text-sm font-medium text-gray-700">
-                    Enable Points Expiration
-                  </label>
-                </div>
-                
-                {formData.expirationEnabled && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Expiration Days
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.expirationDays}
-                      onChange={(e) => handleInputChange('expirationDays', parseInt(e.target.value) || 0)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="1"
-                    />
-                  </div>
-                )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[12px]"
+                  placeholder="Brief description of your loyalty program"
+                  rows={2}
+                />
               </div>
             </div>
 
-            {/* Tiers Configuration */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold text-gray-800 border-b-2 border-blue-200 pb-2">
-                  Loyalty Tiers
-                </h2>
+            {/* Tiers Section */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-[14px] font-medium text-gray-800">Reward Tiers</h3>
                 <button
                   type="button"
                   onClick={addTier}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-[#000] text-white px-3 py-1 rounded-lg text-sm hover:bg-[#fff] hover:text-[#000] transition-colors text-[12px] cursor-pointer border border-black"
                 >
                   Add Tier
                 </button>
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {formData.tiers.map((tier, index) => (
-                  <div key={tier.id} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        Tier {index + 1}
-                      </h3>
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-medium text-gray-700 text-[14px]">Tier {index + 1}</h4>
                       {formData.tiers.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeTier(tier.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          onClick={() => removeTier(index)}
+                          className="text-red-500 hover:text-red-700 text-sm cursor-pointer"
                         >
                           Remove
                         </button>
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tier Name
-                        </label>
-                        <input
-                          type="text"
-                          value={tier.name}
-                          onChange={(e) => handleTierChange(tier.id, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Gold"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Tier name (e.g., Bronze)"
+                        value={tier.name}
+                        onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                        className="px-4 py-3 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
                       
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          XP Required
-                        </label>
-                        <input
-                          type="number"
-                          value={tier.xpRequired}
-                          onChange={(e) => handleTierChange(tier.id, 'xpRequired', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          min="0"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        placeholder="XP Required"
+                        value={tier.xpRequired.toString()}
+                        onChange={(e) => handleTierChange(index, 'xpRequired', e.target.value)}
+                        className="px-4 py-3 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        min="1"
+                        required
+                      />
                       
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Points Multiplier
-                        </label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={tier.multiplier}
-                          onChange={(e) => handleTierChange(tier.id, 'multiplier', parseFloat(e.target.value) || 1)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          min="0.1"
-                          max="10"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Rewards
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => addRewardToTier(tier.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            Add Reward
-                          </button>
-                        </div>
-                        {tier.rewards.map((reward, rewardIndex) => (
-                          <input
-                            key={rewardIndex}
-                            type="text"
-                            value={reward}
-                            onChange={(e) => updateTierReward(tier.id, rewardIndex, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                            placeholder="e.g., 5% cashback"
-                          />
-                        ))}
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Benefits
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => addBenefitToTier(tier.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            Add Benefit
-                          </button>
-                        </div>
-                        {tier.benefits.map((benefit, benefitIndex) => (
-                          <input
-                            key={benefitIndex}
-                            type="text"
-                            value={benefit}
-                            onChange={(e) => updateTierBenefit(tier.id, benefitIndex, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                            placeholder="e.g., Priority support"
-                          />
-                        ))}
-                      </div>
+                      <input
+                        type="text"
+                        placeholder="Rewards (e.g., 5% cashback)"
+                        value={tier.rewards[0] || ''}
+                        onChange={(e) => handleTierChange(index, 'rewards', e.target.value)}
+                        className="px-4 py-3 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-700">{error}</p>
+            {/* Points Per Action */}
+            <div>
+              <h3 className="text-[14px] font-medium text-gray-800 mb-4">Points Per Action</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[14px] font-medium text-gray-700 mb-2">
+                    Purchase Points
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.pointsPerAction.purchase.toString()}
+                    onChange={(e) => handlePointsChange('purchase', e.target.value)}
+                    className="w-full border px-4 py-3 text-[12px] border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Review Points
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.pointsPerAction.review.toString()}
+                    onChange={(e) => handlePointsChange('review', e.target.value)}
+                    className="w-full px-4 py-3 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                  />
+                </div>
               </div>
-            )}
-
-            {/* Result Display */}
-            {result && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-green-800 mb-2">
-                  Program Created Successfully!
-                </h3>
-                <pre className="text-sm text-green-700 bg-green-100 p-3 rounded overflow-auto">
-                  {result}
-                </pre>
-              </div>
-            )}
+            </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+            <div className="flex gap-4 pt-6 text-[12px]">
+              <button           
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || !isConnected}
+                className="bg-[#0345e4] text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {isLoading ? 'Creating Program...' : 'Create Loyalty Program'}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Creating Program...
+                  </>
+                ) : (
+                  'Create Loyalty Program'
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                disabled={loading}
+                className="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-400 transition-colors disabled:opacity-50"
+              >
+                Cancel
               </button>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
-    </div>
-  )
-}
+      )}
 
-export default LoyaltyProgramForm
+      {downloadData && (
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded-lg mt-4"
+          onClick={() => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(downloadData, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "loyalty-program-keys.json");
+            dlAnchorElem.click();
+          }}
+        >
+          Download Keys JSON
+        </button>
+      )}
+
+    </div>
+    </div>
+  );
+};
+
+export default Create;

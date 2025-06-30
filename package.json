@@ -12,6 +12,7 @@
     "@heliofi/checkout-react": "^3.0.0",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
+    "@metaplex-foundation/umi-signer-wallet-adapters": "^1.2.0",
     "@reown/appkit": "^1.7.7",
     "@reown/appkit-adapter-solana": "^1.7.7",
     "@solana/pay": "^0.2.5",

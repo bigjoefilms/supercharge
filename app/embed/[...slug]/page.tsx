@@ -8,13 +8,13 @@ import checkIcon from "@/public/check.png";
 // import closeIcon from "@/public/close.png";
 // import usdcIcon from "@/public/usdc.png";
 import logoIcon from "@/public/verxio-logo.jpg";
-import { quanta } from "@/app/fonts";
+
 import { ToastContainer, toast } from "react-toastify";
 import {
   initializeVerxio,
   getWalletLoyaltyPasses,
   getProgramDetails,
-  // getAssetData,
+  getAssetData,
   issueLoyaltyPass,
 } from "@verxioprotocol/core";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -68,18 +68,10 @@ const Page = () => {
   const commitment: Commitment = "processed";
   const [paymentStatus, setPaymentStatus] = useState(false);
   const [loyal, setLoyal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] =  useState<boolean>(false);
   const [data, setData] = useState<Data | null>(null);
+  const [organisation, setOrganisation] = useState("");
   const amount = 1;
-  // const label = "Coffee Purchase ";
-  // const message = "Thanks for the coffee!";
-  // const memo = "Order #12345";
-  // const reference = new Keypair().publicKey;
-
-  // const originalAmount = 1;
-  // const discountPercentage = 10;
-  // const merchantWallet = "6p7UrAdysKfd65vSbKWRqANYcYEWckZM3Gn4ovwAhqUQ";
-  // const purchaseDescription = "Solana mobile";
   const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
   const rpcUrl =
     "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d";
@@ -89,6 +81,24 @@ const Page = () => {
 
   const CreateTransfer = async () => {
     setIsLoading(true);
+    const umi = createUmi(rpcUrl);
+    // Initialize program
+    const context = initializeVerxio(umi, publicKey(programAuthority));
+    context.collectionAddress = publicKey(collectionAddress);
+    console.log(context);
+
+    if (!address) {
+      console.error("No wallet address available");
+      return;
+    }
+    const passes = await getWalletLoyaltyPasses(context, publicKey(address));
+    const assetData = await getProgramDetails(context);
+
+    console.log(assetData)
+    setOrganisation(assetData?.name ?? "");
+
+    setLoyal(Array.isArray(passes) && passes.length > 0);
+    // console.log("Loyalty passes found:", passes);
     if (!wallet || !isConnected || !walletProvider) {
       setPaymentStatus(false);
       toast.error("Please connect your wallet.");
@@ -162,30 +172,16 @@ const Page = () => {
       setPaymentStatus(true);
       return { success: true };
     } catch (err) {
+      setIsLoading(false);
       console.error("USDC transfer failed:", err);
       return { error: "Transaction failed." };
     }
   };
 
   const handleConnectWallet = async () => {
+   
     open();
-    const umi = createUmi(rpcUrl);
-    // Initialize program
-    const context = initializeVerxio(umi, publicKey(programAuthority));
-    context.collectionAddress = publicKey(collectionAddress);
-    console.log(context);
-
-    if (!address) {
-      console.error("No wallet address available");
-      return;
-    }
-    // const passes = await getAssetData(context, publicKey(address));
-    const passes = await getWalletLoyaltyPasses(context, publicKey(address));
-
-    console.log(passes);
-
-    setLoyal(Array.isArray(passes) && passes.length > 0);
-    console.log("Loyalty passes found:", passes);
+   
   };
 
   const handleClaimLoyaltyPass = async () => {
@@ -230,7 +226,7 @@ const Page = () => {
     if (!address) return "";
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
-
+ 
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -252,6 +248,7 @@ const Page = () => {
 
   useEffect(() => {
     loadData();
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -277,20 +274,11 @@ const Page = () => {
           />
 
           <div className="flex-col w-full">
-            <h1 className="font-bold text-[14px]  to-blue-600 mt-[10px] flex justify-between pb-1">
-              <div className={` ${quanta.className}flex items-center`}>
+            <h1 className="font-bold text-[14px] md:text-[18px]  to-blue-600 mt-[10px] flex justify-between pb-1">
+              <div className={` flex items-center`}>
                 {" "}
                 Supercharge Checkout{" "}
-                {loyal ? (
-                  <span className="text-[8px] bg-green-400 text-[#fff] px-[4px] py-[1px] ml-[8px] rounded-[8px]">
-                    LOYAL
-                  </span>
-                ) : (
-                  <span className="text-[8px] bg-red-400 text-[#fff] px-[4px] py-[1px] ml-[8px] rounded-[8px]">
-                    {" "}
-                    NOT LOYAL{" "}
-                  </span>
-                )}
+              
               </div>
 
               <span
@@ -300,29 +288,70 @@ const Page = () => {
                 {isConnected ? shortenAddress(address) : "Connect wallet"}
               </span>
             </h1>
-            <div className="flex items-start md:items-center font-light text-[12px] md:text-[12px] opacity-80 gap-1  py-[5px]">
+       
+            <div className="flex items-start md:items-center  text-[12px] md:text-[14px] font-medium opacity-80 gap-1  py-[5px] pb-[20px]">
+              
               <p className=" flex items-center justify-center">
-                Use the payment method to pay
+                Use the payment method below to pay {`$${data?.amount} USDC`}{" "} to {data?.label}
               </p>
-              <span className="flex items-center gap-1">
-                {`$${data?.amount} USDC`}{" "}
-                {/* <Image
-                  src={usdcIcon}
-                  width={15}
-                  height={15}
-                  alt="padlockicon"
-                />{" "} */}
-                to {data?.label}
-              </span>
+             
+             
             </div>
+            <div className="flex justify-between">
+            <div>
+              <label className="font-light text-[14px] ">First Name</label>
+              <input
+                        type="text"
+                        placeholder="John"
+                        // value={email}
+                        // onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                        className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full my-[8px]"
+                        required
+                      />
+                      
+              </div>
+              <div>
+              <label className="font-light text-[14px] ">Number</label>
+              <input
+                        type="number"
+                        placeholder="08000333333"
+                        // value={email}
+                        // onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                        className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full my-[8px]"
+                        required
+                      />
+                      
+              </div>
+
+            </div>
+            <div>
+              <label className="font-light text-[14px] ">Email</label>
+              <input
+                        type="email"
+                        placeholder="example@gmail.com"
+                        // value={email}
+                        // onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                        className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full my-[8px]"
+                        required
+                      />
+                      
+              </div>
+              <div className="text-[11px] font-bold opacity-70 pt-[10px] pb-[5px] ">Loyalty pass <span className="text-[#fff] bg-[#000] px-2 py-1 rounded-[5px]">{loyal ? organisation : 'None'}</span> </div>
             {!paymentStatus && (
               <div>
                 <button
                   className="bg-[#cacaca33] px-[10px] py-[12px] cursor-pointer my-2 flex items-center gap-2 text-[#6f6e6e] hover:opacity-75 w-full text-[13px]"
-                  onClick={() => CreateTransfer()}
-                  disabled={isLoading}
+                  onClick={CreateTransfer}
+                  disabled={isLoading || !isConnected}
                 >
-                  Pay with Solana wallet
+                  {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Processing payment
+                  </>
+                ) : (
+                  'Pay with Solana wallet'
+                )}
                   <Image
                     src={solanapayIcon}
                     width={15}
@@ -332,6 +361,7 @@ const Page = () => {
                 </button>
               </div>
             )}
+            
 
             <div className="flex items-center justify-center  "></div>
 

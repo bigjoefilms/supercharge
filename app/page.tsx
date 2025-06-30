@@ -25,6 +25,7 @@ import Link from "next/link";
 import {QRCodeCanvas} from 'qrcode.react'
 
 
+
 const Page = () => {
   const [form, setForm] = useState({
     amount: "",
@@ -44,6 +45,7 @@ const Page = () => {
   const [success, setSuccess] = useState("");
   const [link, setLink] = useState("");
   const [showQR, setShowQR] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
   const handleConnect = () => {
@@ -97,7 +99,6 @@ const Page = () => {
 
     reader.readAsText(file);
   };
-
   const validatePaymentForm = () => {
     console.log("🔍 Validating payment form...");
     
@@ -124,11 +125,24 @@ const Page = () => {
       console.log("❌ Validation failed: Missing memo");
       return false;
     }
+
+    if (!form.email.trim()) {
+      setError("Please enter email");
+      console.log("❌ Validation failed: Missing email");
+      return false;
+    }
     
     if (!form.redirectUrl.trim()) {
       setError("Please enter a redirect URL");
       console.log("❌ Validation failed: Missing redirect URL");
       return false;
+    }
+    if (!isConnected) {
+      setError("Connect your wallet");
+      console.log("❌ Connect wallet");
+      return false;
+
+
     }
 
     // Validate URL format
@@ -202,15 +216,12 @@ const Page = () => {
     setLoading(false);
   };
 
-  
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     console.log(`📝 Form field changed: ${name} = ${value}`);
     setForm({ ...form, [name]: value });
   };
 
- 
 
   const handleCopy = async () => {
     console.log("📋 Attempting to copy link to clipboard...");
@@ -233,7 +244,7 @@ const Page = () => {
          <div
         className={cn(
           "absolute inset-0 -z-50 opacity-5",
-          "[background-size:40px_40px]",
+          "[background-size:20px_20px]",
           "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
           "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
         )}
@@ -289,15 +300,15 @@ const Page = () => {
           </div>
         )}
 
-        <section className="flex  justify-center items-center xl:flex-row flex-col gap-[100px] md:mt-[50px] mt-[30px] m-5 mb-[50px]">
+        <section className="flex  justify-center items-center xl:flex-row flex-col gap-[100px] md:mt-[110px] mt-[30px] m-5 mb-[50px]">
           <div className="flex-1 items-center justify-center flex flex-col">
             <div>
               <h1
-                className={`${quanta.className} text-[45px] font-bold w-full max-w-[550px] bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent `}
+                className={`${quanta.className} text-[32px] md:text-[45px] font-bold w-full max-w-[550px] bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent `}
               >
                 All in one Loyalty payment Checkout gateway.
               </h1>
-              <p className="text-[14px] font-light opacity-70">
+              <p className="md:text-[14px] font-light opacity-70 text-[12px]">
                 Turn customers into brand advocates & businesses into partners
                 with just one platform.
               </p>
@@ -418,23 +429,33 @@ const Page = () => {
                 </div>
 
                 <div>
-                  <label className={`block text-[12px] font-medium text-gray-700 mb-2 ${quanta.className}`}>Upload loyalty json (Optional)</label>
-                  <div className="relative">
-                    <ExternalLink className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                  <label className={`block text-[12px] font-medium text-gray-700 mb-2 ${quanta.className}`}>
                     <input
-                      type="file"
-                      accept=".json,application/json"
-                      onChange={handleFileChange}
-                      className="w-full pl-8 pr-4 py-2 border text-[11px] border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                      type="checkbox"
+                      checked={showUpload}
+                      onChange={() => setShowUpload(v => !v)}
+                      className="mr-2"
                     />
-                  </div>
+                    Upload loyalty JSON (Optional)
+                  </label>
+                  {showUpload && (
+                    <div className="relative mt-2">
+                      <ExternalLink className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input
+                        type="file"
+                        accept=".json,application/json"
+                        onChange={handleFileChange}
+                        className="w-full pl-8 pr-4 py-2 border text-[11px] border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50/50"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {jsonContent && (
+                {/* {jsonContent && (
                   <pre className="mt-4 bg-gray-100 p-2 rounded text-xs max-h-32 overflow-y-auto">
                     {JSON.stringify(jsonContent, null, 2)}
                   </pre>
-                )}
+                )} */}
 
                 <div className="flex flex-col gap-5">
                   <button
