@@ -38,7 +38,6 @@ const Page = () => {
   });
     const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
-  const [jsonContent, setJsonContent] = useState(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -75,7 +74,6 @@ const Page = () => {
         const result = event.target?.result;
         if (typeof result === "string") {
           const json = JSON.parse(result);
-          setJsonContent(json);
           console.log("✅ JSON file parsed successfully:", json);
           setSuccess("JSON file uploaded successfully!");
           setTimeout(() => setSuccess(""), 3000);
@@ -450,12 +448,6 @@ const Page = () => {
                     </div>
                   )}
                 </div>
-
-                {/* {jsonContent && (
-                  <pre className="mt-4 bg-gray-100 p-2 rounded text-xs max-h-32 overflow-y-auto">
-                    {JSON.stringify(jsonContent, null, 2)}
-                  </pre>
-                )} */}
 
                 <div className="flex flex-col gap-5">
                   <button

@@ -14,7 +14,7 @@ import {
   initializeVerxio,
   getWalletLoyaltyPasses,
   getProgramDetails,
-  getAssetData,
+  // getAssetData,
   issueLoyaltyPass,
 } from "@verxioprotocol/core";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
