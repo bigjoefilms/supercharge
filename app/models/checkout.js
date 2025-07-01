@@ -29,18 +29,6 @@ const CheckoutSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  collectionAddress: {
-    type: String,
- required: true,
-  },
-  mintAddress: {
-    type: String,
-     required: true,
-  },
-  programAuthority: {
-    type: String,
-     required: true,
-  },
   reward: {
     type: String,
      required: true,
