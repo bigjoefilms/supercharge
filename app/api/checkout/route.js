@@ -5,36 +5,33 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(request) {
   await dbConnect();
   const body = await request.json();
-  const { amount, label, message, memo, merchant_wallet_address, redirectUrl, collectionAddress, mintAddress, programAuthority, reward, points, email, loyalty} = body;
+  const { amount, message, memo, merchant_wallet_address, reference } = body;
   const id = uuidv4();
 
-    let loyaltyObject = {};
-  try {
-    if (loyalty) {
-      loyaltyObject = JSON.parse(loyalty);
-    }
-  } catch {
-    return new Response(JSON.stringify({ success: false, error: 'Invalid loyalty JSON format' }), {
-      status: 400,
-    });
-  }
+  //   let loyaltyObject = {};
+  // try {
+  //   if (loyalty) {
+  //     loyaltyObject = JSON.parse(loyalty);
+  //   }
+  // } catch {
+  //   return new Response(JSON.stringify({ success: false, error: 'Invalid loyalty JSON format' }), {
+  //     status: 400,
+  //   });
+  // }
 
   try {
     const newCheckout = await Checkout.create({
       id,
-      amount,
-      label,
-      message,
       memo,
+      amount,
+      message,
+      reference,
       merchant_wallet_address,
-      redirectUrl,
-      collectionAddress,
-      mintAddress,
-      programAuthority,
-      reward,
-      points,
-      email,
-      loyalty: loyaltyObject,
+      
+      
+      // redirectUrl,
+      // email,
+      // loyalty: loyaltyObject,
     });
 
     return new Response(JSON.stringify({ success: true, id: newCheckout.id }), { status: 201 });

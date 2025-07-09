@@ -10,10 +10,11 @@ const CheckoutSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  label: {
+  reference: {
     type: String,
     required: true,
   },
+  
   message: {
     type: String,
   
@@ -25,24 +26,18 @@ const CheckoutSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  redirectUrl: {
-    type: String,
-    required: true,
-  },
-  reward: {
-    type: String,
-     required: true,
-  },
-  points:{
-    type: Number,
-     required: true,
-  },
-  email:{
-    type: String,
-     required: true,
-  },
- loyalty: { type: Object, default: {},},
-  createdAt: { type: Date, default: Date.now },
+  // redirectUrl: {
+  //   type: String,
+  //   required: true,
+  // },
+ 
+  
+//   email:{
+//     type: String,
+//      required: true,
+//   },
+//  loyalty: { type: Object, default: {},},
+//   createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.models.Checkout || mongoose.model('Checkout', CheckoutSchema);

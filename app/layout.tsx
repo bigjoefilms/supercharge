@@ -4,6 +4,8 @@ import "./globals.css";
 import ContextProvider from '@/context'
 import WalletProvide from '@/context'
 import localFont from 'next/font/local'
+import Footer from "@/components/footer";
+import Header from "@/components/header";
 
 
 const telegraf = localFont({
@@ -34,8 +36,8 @@ const telegraf = localFont({
 
 
 export const metadata: Metadata = {
-  title: "Supercharge",
-  description: "Loyalty based checkout program ",
+  title: "useSupercharge",
+  description: "Loyalty based checkout  ",
   icons: {
     icon: "/favicon.ico", // or "/favicon.png", etc.
   },
@@ -51,11 +53,13 @@ export default function RootLayout({
       <body
           className={`${telegraf.className} tracking-[0.01em]`}
       >
+        <Header/>
          <ContextProvider> 
           <WalletProvide>
             {children}
             </WalletProvide>
             </ContextProvider>
+            <Footer/>
       </body>
     </html>
   );

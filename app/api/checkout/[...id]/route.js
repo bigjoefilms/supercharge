@@ -18,15 +18,11 @@ export async function GET(request, { params }) {
           label: data.label,
           message: data.message,
           memo: data.memo,
+          reference:data.reference,
           merchant_wallet_address: data.merchant_wallet_address,
-          redirectUrl: data.redirectUrl,
-          collectionAddress: data.collectionAddress,
-          mintAddress: data.mintAddress,
-          programAuthority: data.programAuthority,
-          reward: data.reward,
-          points: data.points,
-          email: data.email,
-          loyalty: data.loyalty,
+          // redirectUrl: data.redirectUrl,
+          // email: data.email,
+          // loyalty: data.loyalty,
         }
       }), { status: 200 });
     } catch (err) {
