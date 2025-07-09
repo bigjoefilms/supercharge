@@ -315,7 +315,7 @@ const Page = () => {
           </div>
           <button className="w-full flex gap-4">
       <span
-           className={`font-light  rounded-[8px] justify-center items-center flex text-[14px] text-[#222] border border-[#7c0b0b] py-[10px] w-full cursor-pointer hover:opacity-70 transition-opacity  gap-3 my-[20px] `}
+           className={` underline rounded-[8px] justify-center border items-center flex text-[14px] text-[#222] font-medium py-[10px] w-full cursor-pointer hover:opacity-70 transition-opacity  gap-3 my-[20px] `}
            onClick={handleConnectWallet}
          >
            {!isConnected ? (
@@ -324,7 +324,7 @@ const Page = () => {
              <span className="text-[#222]">
                Disconnect{" "}
                <span className="">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                  {/* {address?.slice(0, 6)}...{address?.slice(-4)} */}
                 </span>
              </span>
            )}
