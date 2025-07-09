@@ -18,7 +18,7 @@ export default function Header() {
   }, [dark]);
     return (
         <section className="flex items-center justify-center">
-        <header className="max-w-[700px] my-[30px] justify-between flex w-full  p-4 rounded-[18px]">
+        <header className="max-w-[700px] my-[20px] justify-between flex w-full  p-4 rounded-[18px]">
         <div className="flex items-center gap-4">
           {" "}
           <Link href='/' className="flex items-center gap-3">

@@ -115,7 +115,7 @@ export default function PaymentForm() {
 
   if (currentStep === 3) {
     return (
-        <div className='flex justify-center items-center h-screen'>
+        <div className='flex justify-center  '>
 
    
         <div className="max-w-[500px] mx-auto w-full p-6 ">
@@ -148,7 +148,7 @@ export default function PaymentForm() {
         </div>
         <div className="flex justify-center mb-6">
           <div className="relative bg-white p-4 border-2 border-gray-100 rounded-lg">
-          <QRCodeCanvas id="qr-download" value={link} size={300} />
+          <QRCodeCanvas id="qr-download" value={link} size={200} />
           </div>
         </div>
         <div className="text-center mb-6">
@@ -202,10 +202,10 @@ export default function PaymentForm() {
 
   if (currentStep === 2) {
     return (
-        <div className='flex justify-center items-center h-screen'>
+        <div className='flex justify-center items-center '>
 
    
-    <div className="max-w-[500px] mx-auto w-full p-6 ">  
+    <div className="max-w-[500px] mx-auto w-full p-6 mt-[20px] md:mt-[100px]">  
         <div className="text-center mb-6">
         <h2 className="text-[32px] font-medium text-gray-800 mb-2">Payment Information</h2>
         <div className="text-[14px] font-normal text-[#222] opacity-70 mb-4">
@@ -273,7 +273,7 @@ export default function PaymentForm() {
   // Step 1: Enter Amount
   if (!isConnected) {
     return (
-      <div className='flex justify-center items-center h-screen'>
+      <div className='flex justify-center '>
         <div className='bg-[#7c0b0b] text-[#fff] px-6 py-4 rounded-[10px] cursor-pointer text-lg font-semibold' onClick={handleConnect}>
           Connect Wallet
         </div>
@@ -282,7 +282,7 @@ export default function PaymentForm() {
   }
 
   return (
-    <div className='flex justify-center items-center h-screen'>
+    <div className='flex justify-center items-center mt-[20px] md:mt-[100px]'>
       <div className="max-w-[500px] mx-auto w-full p-6 ">
         <div className="text-center mb-6">
           <h2 className="text-[32px] font-normal text-gray-800 mb-2">Enter Amount</h2>

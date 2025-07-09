@@ -11,7 +11,7 @@ const Page = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <main className="flex items-center  flex-col h-screen">
+    <main className="flex items-center  flex-col relative">
      
 
       <div className="flex items-center justify-center h-[70vh]">
@@ -30,7 +30,7 @@ const Page = () => {
           }}
         />
 
-        <section className=" max-w-[600px]  items-start flex flex-col px-[20px] relative ">
+        <section className=" max-w-[600px] w-full items-start flex flex-col px-[20px] relative ">
           <h1
             className={`text-[40px] md:text-[54px]   font-medium ${quanta.className} leading-tight z-50`}
           >
@@ -50,7 +50,7 @@ const Page = () => {
               the complexity.
             </p>
           </div>
-          <form className="w-full  md:px-[0] py-[20px] px-[20px] z-40">
+          <form className="w-full  md:px-[0] py-[20px]  z-40">
             <div className="relative w-full">
               <input
                 type="email"
@@ -70,10 +70,10 @@ const Page = () => {
         </section>
 
         <div
-          className="bg-gradient-to-r from-[#7c0b0b] to-pink-500 w-[1000px] h-[1000px] absolute opacity-5"
+          className="bg-gradient-to-r from-[#7c0b0b] to-pink-500 w-full max-w-[1000px] h-full max-h-[1000px] absolute opacity-10"
           style={{
             WebkitMaskImage:
-              "radial-gradient(circle at center, black 10%, transparent 50%)",
+              "radial-gradient(circle at center, black 10%, transparent 40%)",
             maskImage:
               "radial-gradient(circle at center, black 10%, transparent 70%)",
           }}
