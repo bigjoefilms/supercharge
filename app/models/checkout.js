@@ -14,10 +14,8 @@ const CheckoutSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
   message: {
     type: String,
-  
   },
   memo: {
     type: String,
@@ -26,18 +24,34 @@ const CheckoutSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // redirectUrl: {
-  //   type: String,
-  //   required: true,
-  // },
- 
-  
-//   email:{
-//     type: String,
-//      required: true,
-//   },
-//  loyalty: { type: Object, default: {},},
-//   createdAt: { type: Date, default: Date.now },
+  collection: {
+    type: String,
+    required: true,
+  },
+  updateAuthority: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false,
+  },
+  transactionStatus: {
+    type: String,
+    enum: ['pending', 'success', 'failed', 'cancelled'],
+    default: 'pending',
+  },
+  transactionSignature: {
+    type: String,
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
+  updatedAt: { 
+    type: Date, 
+    default: Date.now 
+  }
+}, { // <- Options object goes here, AFTER the fields object
+  suppressReservedKeysWarning: true
 });
+
+console.log('Schema options:', CheckoutSchema.options); 
 
 export default mongoose.models.Checkout || mongoose.model('Checkout', CheckoutSchema);

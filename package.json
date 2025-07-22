@@ -13,6 +13,7 @@
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
     "@metaplex-foundation/umi-signer-wallet-adapters": "^1.2.0",
+    "@metaplex-foundation/umi-web3js-adapters": "^1.2.0",
     "@reown/appkit": "^1.7.7",
     "@reown/appkit-adapter-solana": "^1.7.7",
     "@solana/pay": "^0.2.5",
@@ -22,6 +23,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.36",
     "@solana/web3.js": "^1.98.2",
     "@verxioprotocol/core": "^0.1.1",
+    "@web3inbox/core": "^1.4.0",
     "bignumber.js": "^9.3.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.513.0",
@@ -35,7 +37,8 @@
     "react-qr-code": "^2.0.16",
     "react-toastify": "^11.0.5",
     "supercharge-core": "^0.0.2",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

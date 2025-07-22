@@ -7,7 +7,11 @@ import Image from "next/image";
 import { cn } from "@/lib/utilis";
 import React, { useState } from "react";
 
+
+
+
 const Page = () => {
+  
   const [email, setEmail] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);

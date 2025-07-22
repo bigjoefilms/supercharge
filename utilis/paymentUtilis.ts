@@ -165,13 +165,22 @@ export interface SubmissionData {
   memo: string;
   reference: string;
   merchant_wallet_address: string;
+  collection :string,
+  updateAuthority: object
+  
+  
+ 
 }
 export const submitPayment = async (
   memo: string,
   amount: number,
   message: string,
   reference: string,
-  address: string
+  address: string,
+  collection: string,
+  updateAuthority : object,
+
+  
 ): Promise<{ success: boolean; data?: any; error?: string }> => {
   const submissionData: SubmissionData = {
     amount: amount,
@@ -179,6 +188,10 @@ export const submitPayment = async (
     memo: memo,
     reference: reference,
     merchant_wallet_address: address,
+    collection :collection,
+    updateAuthority :updateAuthority
+   
+    
   };
 
   const res = await fetch("/api/checkout", {

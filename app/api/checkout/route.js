@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(request) {
   await dbConnect();
   const body = await request.json();
-  const { amount, message, memo, merchant_wallet_address, reference } = body;
+  const { amount, message, memo, merchant_wallet_address, reference,collection,updateAuthority } = body;
   const id = uuidv4();
 
   //   let loyaltyObject = {};
@@ -27,6 +27,9 @@ export async function POST(request) {
       message,
       reference,
       merchant_wallet_address,
+      updateAuthority,
+      collection,
+     
       
       
       // redirectUrl,

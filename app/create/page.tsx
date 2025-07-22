@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 import { PublicKey, Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useAppKitProvider, useAppKitAccount ,useAppKit} from "@reown/appkit/react";
 import type { Provider } from "@reown/appkit-adapter-solana/react";
@@ -11,6 +11,12 @@ import { publicKey } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import { cn } from "@/lib/utilis";
 import Link from "next/link";
+import { useDisconnect } from "@reown/appkit/react";
+import { useRouter } from "next/navigation";
+
+
+
+
 
 interface Tier {
   name: string;
@@ -34,8 +40,12 @@ interface FormData {
 }
 
 const Create: React.FC = () => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
+  const { disconnect } = useDisconnect();
   const [loading, setLoading] = useState<boolean>(false);
+  const [checkingLoyalty, setCheckingLoyalty] = useState<boolean>(false);
+  const [loyaltyData, setLoyaltyData] = useState<any>(null);
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<Provider>("solana");
@@ -53,53 +63,41 @@ const Create: React.FC = () => {
       review: 50
     }
   });
-  // const [downloadData, setDownloadData] = useState<any | null>(null);
 
-  const shortenAddress = (address: string | undefined) => {
-    if (!address) return "";
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
-  };
- 
+
+
   const wallet = address ? new PublicKey(address) : null;
+
+  const checkLoyaltyProgram = async (walletAddress: string) => {
+    setCheckingLoyalty(true);
+    try {
+      const response = await fetch(`/api/loyalty/${walletAddress}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setLoyaltyData(data.loyalty);
+        console.log('✅ Found existing loyalty program:', data.loyalty);
+      } else {
+        setLoyaltyData(null);
+        console.log('ℹ️ No existing loyalty program found');
+      }
+    } catch (error) {
+      console.error('❌ Error checking loyalty program:', error);
+      setLoyaltyData(null);
+    }
+    setCheckingLoyalty(false);
+  };
+
+  // Check for existing loyalty program when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      checkLoyaltyProgram(address);
+    }
+  }, [isConnected, address]);
 
   // Generate metadata automatically
   const generateMetadata = async (): Promise<string> => {
-    // const metadata = getMetadata();
-    // // const metadata = {
-    // //   name: data.loyaltyProgramName,
-    // //   description: data.description || `${data.loyaltyProgramName} - A loyalty program by ${data.organizationName}`,
-    // //   image: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.organizationName)}&background=${data.brandColor.replace('#', '')}&color=fff&size=400`,
-    // //   attributes: [
-    // //     {
-    // //       trait_type: "Organization",
-    // //       value: data.organizationName
-    // //     },
-    // //     {
-    // //       trait_type: "Brand Color",
-    // //       value: data.brandColor
-    // //     },
-    // //     {
-    // //       trait_type: "Total Tiers",
-    // //       value: data.tiers.length.toString()
-    // //     },
-    // //     {
-    // //       trait_type: "Actions Available",
-    // //       value: Object.keys(data.pointsPerAction).length.toString()
-    // //     }
-    // //   ],
-    // //   properties: {
-    // //     category: "loyalty_program",
-    // //     creators: [
-    // //       {
-    // //         address: address,
-    // //         verified: true,
-    // //         share: 100
-    // //       }
-    // //     ]
-    // //   },
-    // //   tiers: data.tiers,
-    // //   pointsPerAction: data.pointsPerAction
-    // // };
+
 
     try {
       return 'https://arweave.net/mock-metadata-uri';
@@ -175,6 +173,34 @@ const Create: React.FC = () => {
     setCurrentStep(1);
   };
 
+  const saveLoyaltyToAPI = async (walletAddress: string, collectionAddress: string, updateAuthority: object) => {
+    try {
+      const response = await fetch('/api/loyalty', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet_address: walletAddress,
+          loyalty: {
+            collection: collectionAddress,
+            updateAuthority: updateAuthority,
+          }
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Loyalty data saved to database:', data);
+      } else {
+        console.error('❌ Failed to save loyalty data:', data.message);
+      }
+    } catch (error) {
+      console.error('❌ Error saving loyalty data:', error);
+    }
+  };
+
   const handleSubmit = async (): Promise<void> => {
     if (!isConnected || !wallet || !walletProvider) {
       alert("Please connect your wallet first");
@@ -199,13 +225,24 @@ const Create: React.FC = () => {
         address ? publicKey(address) : publicKey('11111111111111111111111111111111'),
       )
 
+      // if (walletProvider) {
+      //   // Patch the provider to ensure publicKey is never undefined
+      //   const patchedProvider = {
+      //     ...walletProvider,
+      //     publicKey: walletProvider.publicKey ?? null,
+      //   };
+      //   context.umi.use(walletAdapterIdentity(patchedProvider));
+      // }
+      // Set Signer
+      // if (walletProvider && walletProvider.publicKey !== undefined) {
+      //   const compatibleAdapter: WalletAdapter = {
+      //     ...walletProvider,
+      //     publicKey: walletProvider.publicKey ?? null,
+      //   };
+      //   context.umi.use(walletAdapterIdentity(compatibleAdapter));
+      // }
       if (walletProvider) {
-        // Patch the provider to ensure publicKey is never undefined
-        const patchedProvider = {
-          ...walletProvider,
-          publicKey: walletProvider.publicKey ?? null,
-        };
-        context.umi.use(walletAdapterIdentity(patchedProvider));
+        context.umi.use(walletAdapterIdentity(walletProvider as any));
       }
 
       console.log("Creating loyalty program with Verxio...");
@@ -227,10 +264,19 @@ const Create: React.FC = () => {
         pointsPerAction: formData.pointsPerAction,
       });
 
-      // setDownloadData({
-      //   collection: result.collection,
-      //   updateAuthority: result.updateAuthority,
-      // });
+      // Save loyalty data to API
+      if (address && result.collection && result.updateAuthority) {
+        // Convert objects to string addresses safely
+        const collectionAddress = String(result.collection.publicKey);
+        const updateAuthority= result.updateAuthority;
+        
+        await saveLoyaltyToAPI(
+          address,
+          collectionAddress,
+          updateAuthority
+        );
+      }
+
 
       console.log("🎉 Loyalty Program Created Successfully!");
       console.log("📊 Program Details:", {
@@ -262,6 +308,7 @@ const Create: React.FC = () => {
           review: 50
         }
       });
+      disconnect()
 
     } catch (error) {
       console.error("Error creating loyalty program:", error);
@@ -283,19 +330,27 @@ const Create: React.FC = () => {
     open();
    
   };
+  const handleDisconnect = async () => {
+    try {
+      await disconnect(); // If disconnect is async, make sure to await
+      router.push("/create");
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
+    }
+  };
 
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="flex items-center mb-6">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-[#7c0b0b] text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
+          <div className="w-5 h-5 text-[11px] bg-[#7c0b0b] text-white rounded-full flex items-center justify-center  font-medium mr-3">
             1
           </div>
           <span className="text-sm font-medium text-gray-700">Basic Information</span>
         </div>
         <div className="flex-1 h-px bg-gray-200 mx-4"></div>
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium mr-3">
+          <div className="w-5 h-5 bg-gray-200 text-[11px]  text-gray-500 rounded-full flex items-center justify-center text-sm font-medium mr-3">
             2
           </div>
           <span className="text-sm text-gray-500">Program Configuration</span>
@@ -306,7 +361,7 @@ const Create: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Program Name*
+            Owner
           </label>
           <input
             type="text"
@@ -321,7 +376,7 @@ const Create: React.FC = () => {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Organization Name*
+            Organization Name
           </label>
           <input
             type="text"
@@ -381,14 +436,14 @@ const Create: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center mb-6">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
+          <div className="w-5 h-5 text-[11px] bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
             ✓
           </div>
           <span className="text-sm font-medium text-green-600">Basic Information</span>
         </div>
         <div className="flex-1 h-px bg-gray-200 mx-4"></div>
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-[#7c0b0b] text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
+          <div className="w-5 h-5 text-[11px] bg-[#7c0b0b] text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
             2
           </div>
           <span className="text-sm font-medium text-gray-700">Program Configuration</span>
@@ -519,8 +574,66 @@ const Create: React.FC = () => {
     </div>
   );
 
+  // Show loading state while checking loyalty
+  if (checkingLoyalty) {
+    return (
+      <div className="flex items-center justify-center pt-[40px] relative p-2 h-[80vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#7c0b0b] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking loyalty program...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show existing loyalty program if found
+  if (loyaltyData) {
+    return (
+      <div className="flex items-center justify-center pt-[10px] relative p-2 h-[80vh]">
+        <div className="max-w-[500px] w-full text-center">
+          <div className=" rounded-2xl  p-8 ">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Loyalty Program Found!</h2>
+              <p className="text-gray-600 text-[12px]">You already have a loyalty program associated with this wallet.</p>
+            </div>
+            
+            {/* <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-gray-800 mb-2">Program Details:</h3>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p><span className="font-medium">Collection Address:</span> {loyaltyData.collection}</p>
+                <p><span className="font-medium">Update Authority:</span> {loyaltyData.updateAuthority}</p>
+              </div>
+            </div> */}
+
+            <div className="flex gap-4 justify-center">
+              <Link href="/scan">
+                <button className="  bg-[#7c0b0b] text-[12px] px-6 py-3 rounded-lg font-medium hover:opacity-70 text-[#fff] transition-colors">
+                  Create Payment
+                </button>
+              </Link>
+
+              <button className="  underline text-[12px] px-6 py-3 rounded-lg font-medium hover:opacity-70 border transition-colors" onClick={handleDisconnect}>
+                  Disconnect
+                </button>
+              {/* <button 
+                onClick={() => {
+                  setLoyaltyData(null);
+                  setCurrentStep(1);
+                }}
+                className="bg-[#7c0b0b] text-white px-6 py-3 rounded-lg font-medium hover:opacity-70 transition-colors"
+              >
+                Create New Program
+              </button> */}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show create loyalty program form if no existing program
   return (
-    <div className="flex items-center justify-center pt-[40px] relative">
+    <div className="flex items-center justify-center pt-[40px] relative p-2 h-[80vh] overflow-scroll">
       <div
         className={cn(
           "absolute inset-0 -z-50 opacity-5",
@@ -533,7 +646,7 @@ const Create: React.FC = () => {
           maskImage: "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)"
         }}
       />
-      <div className="flex flex-col gap-2 p-2 max-w-[500px] w-full">
+      <div className="flex flex-col gap-2 p-2 max-w-[500px] w-full h-[80vh]">
         <Link href="/">
           <span className="text-[14px] cursor-pointer underline">Back to Home</span>
         </Link>
@@ -551,7 +664,7 @@ const Create: React.FC = () => {
                 className="cursor-pointer bg-[#7c0b0b] text-[#fff] px-[12px] py-[12px] rounded-[8px] text-[11px]"
                 onClick={handleConnectWallet}
               >
-                {isConnected ? shortenAddress(address) : "Connect wallet"}
+                {isConnected ? address?.slice(0,7) : "Connect wallet"}
               </span>
             </div>
           </div>
