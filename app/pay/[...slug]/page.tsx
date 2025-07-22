@@ -117,7 +117,7 @@ const [rewards, setRewards] = useState<string | null>(null);
         );
   
         if (walletProvider) {
-          context.umi.use(walletAdapterIdentity(walletProvider));
+          context.umi.use(walletAdapterIdentity(walletProvider as any ));
         }
   
         if (response.data.collection) {
