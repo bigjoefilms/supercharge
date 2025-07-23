@@ -19,7 +19,8 @@ import {
   publicKey,
 } from "@metaplex-foundation/umi";
 import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
-import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
+import { WalletAdapter, walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
+import { useWallet } from '@solana/wallet-adapter-react' 
 import {
   useAppKit,
   useAppKitAccount,
@@ -42,6 +43,7 @@ import type { Provider } from "@reown/appkit-adapter-solana/react";
 import { useParams } from "next/navigation";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { WalletConnectWalletAdapter } from "@walletconnect/solana-adapter";
 
 
 interface Data {
@@ -68,6 +70,7 @@ const Page = () => {
     "confirmed"
   );
   const [organisation, setOrganisation] = useState<string>("");
+  
   const [owner, setOwner] = useState<string>("");
   const commitment: Commitment = "processed";
   const [data, setData] = useState<Data | null>(null);
@@ -117,8 +120,13 @@ const [rewards, setRewards] = useState<string | null>(null);
         );
   
         if (walletProvider) {
-          context.umi.use(walletAdapterIdentity(walletProvider as any ));
+          // ts-expect-error
+          context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
         }
+
+        // if (walletProvider) {
+        //   context.umi.use(new WalletConnectWalletAdapter(walletProvider as any));
+        // }
   
         if (response.data.collection) {
           context.collectionAddress = publicKey(response.data.collection);
@@ -421,8 +429,8 @@ const [rewards, setRewards] = useState<string | null>(null);
                 <Image
                   src={checkLogo}
                   alt="logo"
-                  width={50}
-                  height={50}
+                  width={90}
+                  height={90}
                   className="mb-0.5"
                 />
               </span>
@@ -502,7 +510,10 @@ const [rewards, setRewards] = useState<string | null>(null);
               <span className="font-semibold text-[20px]">{data?.memo}</span>
             </div>
           </div>
-          <div className="flex flex-col mt-[35px] bg-[#edecec] px-[20px] py-[20px] rounded-[12px]">
+          <div className="border border-[#ece9e9] px-3 py-2 text-[12px] opacity-60">
+            Not Eligible  for reward no loyalty found 
+          </div>
+          <div className="flex flex-col mt-[15px] bg-[#edecec] px-[20px] py-[20px] rounded-[12px]">
             <span className="text-[14px] font-semibold">MESSAGE</span>
             <span className="text-[12px]">{data?.message}</span>
           </div>
@@ -546,7 +557,7 @@ const [rewards, setRewards] = useState<string | null>(null);
             >
               Claim Loyalty Pass
             </button>
-         )} 
+         )}  
         </div>
       </div>
     </main>

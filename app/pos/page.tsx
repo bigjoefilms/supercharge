@@ -247,8 +247,8 @@ useEffect(() => {
                 <Image
                   src={checkLogo}
                   alt="logo"
-                  width={50}
-                  height={50}
+                  width={90}
+                  height={90}
                   className="mb-0.5 mt-[24px]"
                 />
               </span></div>}
