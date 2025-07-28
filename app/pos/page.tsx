@@ -1,11 +1,11 @@
 "use client";
-import React, { useState, useEffect ,useCallback} from "react";
+import React, { useState, useEffect , useCallback} from "react";
 import checkLogo from "@/public/check.png";
 import Logo from "@/public/usdc.png";
 import { Keypair } from "@solana/web3.js";
 import Image from "next/image";
 import { submitPayment, copyToClipboard } from "@/utilis/paymentUtilis";
-import { useAppKitProvider, useAppKitAccount ,useAppKit} from "@reown/appkit/react";
+import { useAppKitProvider, useAppKitAccount ,useAppKit  } from "@reown/appkit/react";
 import { Loader2, Copy } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { publicKey } from "@metaplex-foundation/umi";
 import { WalletAdapter, walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import type { Provider } from "@reown/appkit-adapter-solana/react";
-// import type { UmiSigner } from "@metaplex-foundation/umi";
+
 
 interface LoyaltyData {
   collection: string;
@@ -121,6 +121,8 @@ export default function PaymentForm() {
     }
     setCheckingLoyalty(false);
   }, [address, walletProvider]);
+
+ 
   
 
   // Check for existing loyalty program when wallet connects

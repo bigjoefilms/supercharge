@@ -8,7 +8,7 @@ import { initializeVerxio,createLoyaltyProgram } from '@verxioprotocol/core'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import {  generateSigner } from '@metaplex-foundation/umi';
 import { publicKey } from '@metaplex-foundation/umi'
-import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
+import { WalletAdapter, walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import { cn } from "@/lib/utilis";
 import Link from "next/link";
 import { useDisconnect } from "@reown/appkit/react";
@@ -38,6 +38,15 @@ interface FormData {
   tiers: Tier[];
   pointsPerAction: PointsPerAction;
 }
+interface LoyaltyData {
+  collection: string;
+  updateAuthority: string;
+}
+
+// Then replace line 48:
+// OLD: const [loyaltyData, setLoyaltyData] = useState<any>(null);
+// NEW: 
+
 
 const Create: React.FC = () => {
   const router = useRouter();
@@ -45,7 +54,7 @@ const Create: React.FC = () => {
   const { disconnect } = useDisconnect();
   const [loading, setLoading] = useState<boolean>(false);
   const [checkingLoyalty, setCheckingLoyalty] = useState<boolean>(false);
-  const [loyaltyData, setLoyaltyData] = useState<any>(null);
+  const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<Provider>("solana");
@@ -242,7 +251,8 @@ const Create: React.FC = () => {
       //   context.umi.use(walletAdapterIdentity(compatibleAdapter));
       // }
       if (walletProvider) {
-        context.umi.use(walletAdapterIdentity(walletProvider as any));
+        
+        context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
       }
 
       console.log("Creating loyalty program with Verxio...");

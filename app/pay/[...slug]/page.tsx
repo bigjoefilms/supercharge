@@ -20,7 +20,7 @@ import {
 } from "@metaplex-foundation/umi";
 import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
 import { WalletAdapter, walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
-import { useWallet } from '@solana/wallet-adapter-react' 
+// import { useWallet } from '@solana/wallet-adapter-react' 
 import {
   useAppKit,
   useAppKitAccount,
@@ -43,7 +43,7 @@ import type { Provider } from "@reown/appkit-adapter-solana/react";
 import { useParams } from "next/navigation";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { WalletConnectWalletAdapter } from "@walletconnect/solana-adapter";
+// import { WalletConnectWalletAdapter } from "@walletconnect/solana-adapter";
 
 
 interface Data {
@@ -58,6 +58,11 @@ interface Data {
     secretKey: number[];
   };
 }
+interface MetadataAttribute {
+  trait_type: string;
+  value: string | number;
+}
+
 
 const Page = () => {
   const { open } = useAppKit();
@@ -120,13 +125,8 @@ const [rewards, setRewards] = useState<string | null>(null);
         );
   
         if (walletProvider) {
-          // ts-expect-error
           context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
         }
-
-        // if (walletProvider) {
-        //   context.umi.use(new WalletConnectWalletAdapter(walletProvider as any));
-        // }
   
         if (response.data.collection) {
           context.collectionAddress = publicKey(response.data.collection);
@@ -153,15 +153,16 @@ const [rewards, setRewards] = useState<string | null>(null);
           const metadataRes = await fetch(assetData.uri);
           const metadata = await metadataRes.json();
   
-          const attributes = metadata.attributes || [];
+          const attributes: MetadataAttribute[] = metadata.attributes || [];
   
-          const foundTier = attributes.find((attr: any) => attr.trait_type === "Tier")?.value;
-          const foundXp = attributes.find((attr: any) => attr.trait_type === "XP")?.value;
-          const foundRewards = attributes.find((attr: any) => attr.trait_type === "Rewards")?.value;
+          // Fixed: Replace `any` with proper typing
+          const foundTier = attributes.find((attr: MetadataAttribute) => attr.trait_type === "Tier")?.value;
+          const foundXp = attributes.find((attr: MetadataAttribute) => attr.trait_type === "XP")?.value;
+          const foundRewards = attributes.find((attr: MetadataAttribute) => attr.trait_type === "Rewards")?.value;
   
-          setTier(foundTier || null);
-          setXp(foundXp || null);
-          setRewards(foundRewards || null);
+          setTier(foundTier ? String(foundTier) : null);
+          setXp(foundXp ? String(foundXp) : null);
+          setRewards(foundRewards ? String(foundRewards) : null);
         } else {
           console.warn("No loyalty passes found for this wallet.");
         }
@@ -173,9 +174,8 @@ const [rewards, setRewards] = useState<string | null>(null);
   
       setIsLoading(false);
     },
-    [params.slug, walletProvider]
+    [params.slug, walletProvider, BASE_URL]
   );
-  
 
   useEffect(() => {
     if (address) {
@@ -300,9 +300,12 @@ const [rewards, setRewards] = useState<string | null>(null);
         umi,
         publicKey(address ?? "11111111111111111111111111111111")
       );
+
       if (walletProvider) {
-        context.umi.use(walletAdapterIdentity(walletProvider as any));
-      }
+        
+          context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
+        }
+
 
       // Set the collection from database data
       if (data.collection) {
@@ -359,8 +362,10 @@ const [rewards, setRewards] = useState<string | null>(null);
         umi,
         publicKey(address ?? "11111111111111111111111111111111")
       );
+      
       if (walletProvider) {
-        context.umi.use(walletAdapterIdentity(walletProvider as any));
+        
+        context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
       }
 
       // Set the collection from database data
