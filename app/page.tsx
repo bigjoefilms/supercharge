@@ -6,12 +6,9 @@ import Logo from "@/public/usdc.png";
 import Image from "next/image";
 import { cn } from "@/lib/utilis";
 import React, { useState } from "react";
-
-
-
+import Link from "next/link";
 
 const Page = () => {
-  
   const [email, setEmail] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,15 +31,13 @@ const Page = () => {
         alert(data.message || "Something went wrong.");
       }
     } catch {
-      alert("Network error. Please try again.",);
+      alert("Network error. Please try again.");
     }
     setLoading(false);
   };
 
   return (
     <main className="flex items-center  flex-col relative">
-     
-
       <div className="flex items-center justify-center h-[70vh]">
         <div
           className={cn(
@@ -79,25 +74,28 @@ const Page = () => {
               the complexity.
             </p>
           </div>
-          <form className="w-full md:px-[0] py-[20px] z-40" onSubmit={handleSubmit}>
-            <div className="relative w-full">
-              <input
+          {/* <form className="w-full md:px-[0] py-[20px] z-40" onSubmit={handleSubmit}>
+            <div className="relative w-full"> */}
+          {/* <input
                 type="email"
                 placeholder="Enter your email"
                 className="w-full pr-20 pl-4 py-3 border-2 border-gray-200 rounded-[12px] focus:outline-none focus:ring-2 text-[14px]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="absolute right-1 top-1 bottom-1 bg-[#7c0b0b] text-white px-5 py-3 text-[14px] rounded-[12px] cursor-pointer hover:opacity-80 transition"
-              >
-                {loading ? "Joining..." : "Join Waitlist"}
-              </button>
-            </div>
-          </form>
+              /> */}
+          <Link
+            href="/pos"
+            className="w-full"
+
+            // disabled={loading}
+          >
+            <button className="w-full bg-[#7c0b0b] mt-[10px] text-white px-5 py-3 text-[14px] rounded-[12px] cursor-pointer hover:opacity-80 transition flex items-center justify-center">
+              Test Demo
+            </button>
+          </Link>
+          {/* </div> */}
+          {/* </form> */}
         </section>
 
         <div
