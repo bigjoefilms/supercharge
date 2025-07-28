@@ -5,36 +5,36 @@ import Logo from "@/public/usdc.png";
 
 import Image from "next/image";
 import { cn } from "@/lib/utilis";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 
 const Page = () => {
-  const [email, setEmail] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // const [email, setEmail] = useState("");
+  // const [showSuccess, setShowSuccess] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setShowSuccess(true);
-        setEmail("");
-        setTimeout(() => setShowSuccess(false), 4000); // Hide after 4s
-      } else {
-        alert(data.message || "Something went wrong.");
-      }
-    } catch {
-      alert("Network error. Please try again.");
-    }
-    setLoading(false);
-  };
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("/api/waitlist", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email }),
+  //     });
+  //     const data = await res.json();
+  //     if (data.success) {
+  //       setShowSuccess(true);
+  //       setEmail("");
+  //       setTimeout(() => setShowSuccess(false), 4000); // Hide after 4s
+  //     } else {
+  //       alert(data.message || "Something went wrong.");
+  //     }
+  //   } catch {
+  //     alert("Network error. Please try again.");
+  //   }
+  //   setLoading(false);
+  // };
 
   return (
     <main className="flex items-center  flex-col relative">
@@ -108,11 +108,11 @@ const Page = () => {
           }}
         ></div>
       </div>
-      {showSuccess && (
+      {/* {showSuccess && (
         <div className="fixed bottom-6 right-6 border border:opacity-70 px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in text-[#222]">
           🎉 Successfully joined the waitlist!
         </div>
-      )}
+      )} */}
     </main>
   );
 };
