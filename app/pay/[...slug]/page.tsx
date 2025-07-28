@@ -419,7 +419,7 @@ const [rewards, setRewards] = useState<string | null>(null);
   return (
     <main>
       <ToastContainer position="bottom-left" autoClose={4000} />
-      <div className="flex justify-center items-center h-[80vh] flex-col px-[20px]">
+      <div className="flex justify-center items-center h-[100vh] flex-col px-[20px]">
         <div className="flex  flex-col items-start w-full max-w-[500px]  md:px-[0px]  rounded-3xl border-[#d9d6d6] py-[10px] font-bold text-[24px] ">
           {/* Status Banner */}
           {transactionStatus === "pending" && (
