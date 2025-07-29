@@ -453,7 +453,7 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex justify-end pt-6">
+      <div className="flex justify-end pt-2">
         <button
           type="button"
           onClick={handleNextStep}
