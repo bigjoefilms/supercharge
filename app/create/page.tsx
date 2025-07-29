@@ -643,7 +643,7 @@ const Create: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center pt-[40px] relative p-2 h-[80vh] overflow-scroll">
+    <div className="flex items-center justify-center pt-[40px] relative p-2 h-[100vh] overflow-scroll">
       <div
         className={cn(
           "absolute inset-0 -z-50 opacity-5",
