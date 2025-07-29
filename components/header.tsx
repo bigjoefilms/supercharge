@@ -31,6 +31,9 @@ export default function Header() {
           />
           <h1 className={`${quanta.className} `}>Supercharge</h1></Link>
         </div>
+
+<div className="flex items-center">
+  
         <button
       onClick={() => setDark((d) => !d)}
       className="p-2 rounded-full  cursor-pointer"
@@ -42,6 +45,9 @@ export default function Header() {
            <Moon className="w-5 h-5 text-gray-800 cursor-pointer" />
       )}
     </button>
+
+</div>
+        
       </header>
       </section>
     );

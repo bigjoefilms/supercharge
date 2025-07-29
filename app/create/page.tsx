@@ -14,10 +14,6 @@ import Link from "next/link";
 import { useDisconnect } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
 
-
-
-
-
 interface Tier {
   name: string;
   xpRequired: number;
@@ -38,15 +34,11 @@ interface FormData {
   tiers: Tier[];
   pointsPerAction: PointsPerAction;
 }
+
 interface LoyaltyData {
   collection: string;
   updateAuthority: string;
 }
-
-// Then replace line 48:
-// OLD: const [loyaltyData, setLoyaltyData] = useState<any>(null);
-// NEW: 
-
 
 const Create: React.FC = () => {
   const router = useRouter();
@@ -55,6 +47,7 @@ const Create: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [checkingLoyalty, setCheckingLoyalty] = useState<boolean>(false);
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<Provider>("solana");
@@ -72,8 +65,6 @@ const Create: React.FC = () => {
       review: 50
     }
   });
-
-
 
   const wallet = address ? new PublicKey(address) : null;
 
@@ -97,17 +88,13 @@ const Create: React.FC = () => {
     setCheckingLoyalty(false);
   };
 
-  // Check for existing loyalty program when wallet connects
   useEffect(() => {
     if (isConnected && address) {
       checkLoyaltyProgram(address);
     }
   }, [isConnected, address]);
 
-  // Generate metadata automatically
   const generateMetadata = async (): Promise<string> => {
-
-
     try {
       return 'https://arweave.net/mock-metadata-uri';
     } catch (error) {
@@ -216,8 +203,7 @@ const Create: React.FC = () => {
       return;
     }
 
-    // Check wallet balance
-    const connection = new Connection('https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d');
+    const connection = new Connection(  `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,);
     const balance = await connection.getBalance(wallet);
     if (balance < LAMPORTS_PER_SOL * 0.1) {
       alert("Insufficient balance. Please ensure you have at least 0.1 SOL in your wallet.");
@@ -227,31 +213,14 @@ const Create: React.FC = () => {
     setLoading(true);
 
     try {
-      const umi = createUmi('https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d')
+      const umi = createUmi( `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}}`,)
 
       const context = initializeVerxio(
         umi,
         address ? publicKey(address) : publicKey('11111111111111111111111111111111'),
       )
 
-      // if (walletProvider) {
-      //   // Patch the provider to ensure publicKey is never undefined
-      //   const patchedProvider = {
-      //     ...walletProvider,
-      //     publicKey: walletProvider.publicKey ?? null,
-      //   };
-      //   context.umi.use(walletAdapterIdentity(patchedProvider));
-      // }
-      // Set Signer
-      // if (walletProvider && walletProvider.publicKey !== undefined) {
-      //   const compatibleAdapter: WalletAdapter = {
-      //     ...walletProvider,
-      //     publicKey: walletProvider.publicKey ?? null,
-      //   };
-      //   context.umi.use(walletAdapterIdentity(compatibleAdapter));
-      // }
       if (walletProvider) {
-        
         context.umi.use(walletAdapterIdentity(walletProvider as unknown as WalletAdapter));
       }
 
@@ -274,9 +243,7 @@ const Create: React.FC = () => {
         pointsPerAction: formData.pointsPerAction,
       });
 
-      // Save loyalty data to API
       if (address && result.collection && result.updateAuthority) {
-        // Convert objects to string addresses safely
         const collectionAddress = String(result.collection.publicKey);
         const updateAuthority= result.updateAuthority;
         
@@ -287,7 +254,6 @@ const Create: React.FC = () => {
         );
       }
 
-
       console.log("🎉 Loyalty Program Created Successfully!");
       console.log("📊 Program Details:", {
         name: formData.loyaltyProgramName,
@@ -296,9 +262,6 @@ const Create: React.FC = () => {
         tiersCount: formData.tiers.length,
         actionsConfigured: Object.keys(formData.pointsPerAction).length
       });
-      console.log("🔗 Blockchain Result:", result);
-      console.log("📋 Full Configuration:", formData);
-      console.log("🔗 Metadata URI:", metadataUri);
 
       setCurrentStep(1);
       setLoading(false);
@@ -318,7 +281,9 @@ const Create: React.FC = () => {
           review: 50
         }
       });
-      disconnect()
+
+      // Show success modal instead of disconnecting immediately
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error("Error creating loyalty program:", error);
@@ -336,18 +301,78 @@ const Create: React.FC = () => {
   };
 
   const handleConnectWallet = async () => {
-   
     open();
-   
   };
+
   const handleDisconnect = async () => {
-    try {
-      await disconnect(); // If disconnect is async, make sure to await
-      router.push("/create");
-    } catch (error) {
-      console.error("Error disconnecting wallet:", error);
+    disconnect();
+    
+    if (!loyaltyData) {
+      setCurrentStep(1);
     }
+    
+    // Reset modal and other states
+    setShowSuccessModal(false);
+    setLoyaltyData(null);
+    setLoading(false);
+    setCheckingLoyalty(false);
+    
+    // Reset form data
+    setFormData({
+      loyaltyProgramName: "",
+      organizationName: "",
+      brandColor: "#FF5733",
+      description: "",
+      tiers: [
+        { name: "Bronze", xpRequired: 500, rewards: ["5% discount on purchases"] },
+        { name: "Silver", xpRequired: 1000, rewards: ["10% discount on purchases"] }
+      ],
+      pointsPerAction: {
+        purchase: 100,
+        review: 50
+      }
+    });
   };
+
+  const handleGeneratePayment = () => {
+    setShowSuccessModal(false);
+    router.push("/scan");
+  };
+
+  // Success Modal Component
+  const SuccessModal = () => (
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Success!</h2>
+          <p className="text-gray-600 text-[14px]">
+            Your loyalty program has been created successfully!
+          </p>
+        </div>
+        
+        <div className="flex gap-4 justify-center">
+          <button 
+            onClick={handleGeneratePayment}
+            className="bg-[#7c0b0b] text-white px-6 py-3 rounded-lg font-medium hover:opacity-70 transition-colors text-[12px]"
+          >
+            Generate Payment
+          </button>
+          
+          <button 
+            onClick={handleDisconnect}
+            className="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-400 transition-colors text-[12px]"
+          >
+            Disconnect
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderStep1 = () => (
     <div className="space-y-6">
@@ -367,7 +392,6 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      {/* Basic Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -429,7 +453,6 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex justify-end pt-6">
         <button
           type="button"
@@ -460,7 +483,6 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      {/* Tiers Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-[14px] font-medium text-gray-800">Reward Tiers</h3>
@@ -522,7 +544,6 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      {/* Points Per Action */}
       <div>
         <h3 className="text-[14px] font-medium text-gray-800 mb-4">Points Per Action</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -554,7 +575,6 @@ const Create: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex justify-between pt-6">
         <button
           type="button"
@@ -584,7 +604,6 @@ const Create: React.FC = () => {
     </div>
   );
 
-  // Show loading state while checking loyalty
   if (checkingLoyalty) {
     return (
       <div className="flex items-center justify-center pt-[40px] relative p-2 h-[80vh]">
@@ -596,7 +615,6 @@ const Create: React.FC = () => {
     );
   }
 
-  // Show existing loyalty program if found
   if (loyaltyData) {
     return (
       <div className="flex items-center justify-center pt-[10px] relative p-2 h-[80vh]">
@@ -606,34 +624,17 @@ const Create: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Loyalty Program Found!</h2>
               <p className="text-gray-600 text-[12px]">You already have a loyalty program associated with this wallet.</p>
             </div>
-            
-            {/* <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Program Details:</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p><span className="font-medium">Collection Address:</span> {loyaltyData.collection}</p>
-                <p><span className="font-medium">Update Authority:</span> {loyaltyData.updateAuthority}</p>
-              </div>
-            </div> */}
 
             <div className="flex gap-4 justify-center">
-              <Link href="/scan">
+              <Link href="/pos">
                 <button className="  bg-[#7c0b0b] text-[12px] px-6 py-3 rounded-lg font-medium hover:opacity-70 text-[#fff] transition-colors">
                   Create Payment
                 </button>
               </Link>
 
-              <button className="  underline text-[12px] px-6 py-3 rounded-lg font-medium hover:opacity-70 border transition-colors" onClick={handleDisconnect}>
+              <button className="underline text-[12px] px-6 cursor-pointer py-3 rounded-lg font-medium hover:opacity-70 border transition-colors" onClick={handleDisconnect}>
                   Disconnect
                 </button>
-              {/* <button 
-                onClick={() => {
-                  setLoyaltyData(null);
-                  setCurrentStep(1);
-                }}
-                className="bg-[#7c0b0b] text-white px-6 py-3 rounded-lg font-medium hover:opacity-70 transition-colors"
-              >
-                Create New Program
-              </button> */}
             </div>
           </div>
         </div>
@@ -641,7 +642,6 @@ const Create: React.FC = () => {
     );
   }
 
-  // Show create loyalty program form if no existing program
   return (
     <div className="flex items-center justify-center pt-[40px] relative p-2 h-[80vh] overflow-scroll">
       <div
@@ -681,9 +681,10 @@ const Create: React.FC = () => {
 
           {currentStep === 1 ? renderStep1() : renderStep2()}
         </div>
-
-        
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && <SuccessModal />}
     </div>
   );
 };

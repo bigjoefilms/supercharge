@@ -8,37 +8,13 @@ import { cn } from "@/lib/utilis";
 import React from "react";
 import Link from "next/link";
 
+
 const Page = () => {
-  // const [email, setEmail] = useState("");
-  // const [showSuccess, setShowSuccess] = useState(false);
-  // const [loading, setLoading] = useState(false);
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch("/api/waitlist", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email }),
-  //     });
-  //     const data = await res.json();
-  //     if (data.success) {
-  //       setShowSuccess(true);
-  //       setEmail("");
-  //       setTimeout(() => setShowSuccess(false), 4000); // Hide after 4s
-  //     } else {
-  //       alert(data.message || "Something went wrong.");
-  //     }
-  //   } catch {
-  //     alert("Network error. Please try again.");
-  //   }
-  //   setLoading(false);
-  // };
-
+ 
   return (
     <main className="flex items-center  flex-col relative">
-      <div className="flex items-center justify-center h-[70vh]">
+      <section className="flex items-center justify-center h-[70vh] flex-col">
+     
         <div
           className={cn(
             "absolute inset-0 -z-50 opacity-5",
@@ -54,7 +30,7 @@ const Page = () => {
           }}
         />
 
-        <section className=" max-w-[600px] w-full items-start flex flex-col px-[20px] relative ">
+        <section className=" max-w-[600px] w-full items-start flex flex-col px-[20px] ">
           <h1
             className={`text-[40px] md:text-[54px]   font-medium ${quanta.className} leading-tight z-50`}
           >
@@ -74,32 +50,27 @@ const Page = () => {
               the complexity.
             </p>
           </div>
-          {/* <form className="w-full md:px-[0] py-[20px] z-40" onSubmit={handleSubmit}>
-            <div className="relative w-full"> */}
-          {/* <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full pr-20 pl-4 py-3 border-2 border-gray-200 rounded-[12px] focus:outline-none focus:ring-2 text-[14px]"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              /> */}
-          <Link
-            href="/pos"
-            className="w-full"
-
-            // disabled={loading}
-          >
-            <button className="w-full bg-[#7c0b0b] mt-[10px] text-white px-5 py-3 text-[14px] rounded-[12px] cursor-pointer hover:opacity-80 transition flex items-center justify-center">
-              Test Demo
-            </button>
-          </Link>
-          {/* </div> */}
-          {/* </form> */}
+{/* 
+          // <Link href="/pos" className="w-full -z-40 ">
+          //   <button className="w-full bg-[#7c0b0b] mt-[10px] text-white px-5 py-3 text-[14px] rounded-[12px] cursor-pointer hover:opacity-80 transition flex items-center justify-center">
+          //     Test Demo
+          //   </button>
+          // </Link> */}
+          <Link href="/pos" className="w-full">
+  
+  <button  className=" bg-[#7c0b0b] text-white px-5 py-3 text-[14px] rounded-[12px] cursor-pointer hover:opacity-80 transition flex items-center justify-center mr-[10px] mt-[10px] w-full">
+                Generate Payment 
+              </button>
+              </Link>
+           
+          
+         
         </section>
+        
+        
 
         <div
-          className="bg-gradient-to-r from-[#7c0b0b] to-pink-500 w-full max-w-[1000px] h-full max-h-[1000px] absolute opacity-10"
+          className="bg-gradient-to-r from-[#7c0b0b] to-pink-500 w-full max-w-[1000px] h-full max-h-[1000px] absolute opacity-10 -z-50"
           style={{
             WebkitMaskImage:
               "radial-gradient(circle at center, black 10%, transparent 40%)",
@@ -107,12 +78,9 @@ const Page = () => {
               "radial-gradient(circle at center, black 10%, transparent 70%)",
           }}
         ></div>
-      </div>
-      {/* {showSuccess && (
-        <div className="fixed bottom-6 right-6 border border:opacity-70 px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in text-[#222]">
-          🎉 Successfully joined the waitlist!
-        </div>
-      )} */}
+       
+      </section>
+      
     </main>
   );
 };

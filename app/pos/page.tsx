@@ -73,7 +73,7 @@ export default function PaymentForm() {
   
         try {
           const umi = createUmi(
-            "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d"
+            `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,
           );
   
           const context = initializeVerxio(
@@ -218,7 +218,7 @@ useEffect(() => {
         memo,
         parseFloat(amount),
         message,
-        reference, // pass your reference string
+        newReference, // pass your reference string
         address ?? "",
         collection,
         updateAuthority,

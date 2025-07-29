@@ -71,7 +71,7 @@ const Page = () => {
   const params = useParams();
   const { walletProvider } = useAppKitProvider<Provider>("solana");
   const connection = new Connection(
-    "https://mainnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d",
+    `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,
     "confirmed"
   );
   const [organisation, setOrganisation] = useState<string>("");
@@ -116,8 +116,10 @@ const [rewards, setRewards] = useState<string | null>(null);
         setData(response.data);
   
         const umi = createUmi(
-          "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d"
+          `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,
         );
+       
+        
   
         const context = initializeVerxio(
           umi,
@@ -293,7 +295,7 @@ const [rewards, setRewards] = useState<string | null>(null);
         return;
       }
       const umi = createUmi(
-        "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d"
+        `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,
       );
 
       const context = initializeVerxio(
@@ -355,7 +357,7 @@ const [rewards, setRewards] = useState<string | null>(null);
         return;
       }
       const umi = createUmi(
-        "https://devnet.helius-rpc.com/?api-key=c7e5b412-c980-4f46-8b06-2c85c0b4a08d"
+        `${process.env.NEXT_PUBLIC_HELIUS_RPC_URL}`,
       );
 
       const context = initializeVerxio(
@@ -419,7 +421,7 @@ const [rewards, setRewards] = useState<string | null>(null);
   return (
     <main>
       <ToastContainer position="bottom-left" autoClose={4000} />
-      <div className="flex justify-center items-center h-[100vh] flex-col px-[20px]">
+      <div className="flex justify-center items-center h-[100vh] md:h-[75vh] flex-col px-[20px] ">
         <div className="flex  flex-col items-start w-full max-w-[500px]  md:px-[0px]  rounded-3xl border-[#d9d6d6] py-[10px] font-bold text-[24px] ">
           {/* Status Banner */}
           {transactionStatus === "pending" && (
