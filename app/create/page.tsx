@@ -376,9 +376,9 @@ const Create: React.FC = () => {
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <div className="flex items-center mb-6">
-        <div className="flex items-center">
-          <div className="w-5 h-5 text-[11px] bg-[#7c0b0b] text-white rounded-full flex items-center justify-center  font-medium mr-3">
+      <div className="flex items-center mb-6 ">
+        <div className="flex items-center ">
+          <div className="w-5 h-5 text-[11px]  bg-[#7c0b0b] text-white rounded-full flex items-center justify-center  font-medium mr-3">
             1
           </div>
           <span className="text-sm font-medium text-gray-700">Basic Information</span>
@@ -656,7 +656,7 @@ const Create: React.FC = () => {
           maskImage: "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)"
         }}
       />
-      <div className="flex flex-col gap-2 p-2 max-w-[500px] w-full h-[80vh]">
+      <div className="flex flex-col gap-2 p-2 max-w-[500px] w-full h-[100vh]">
         <Link href="/">
           <span className="text-[14px] cursor-pointer underline">Back to Home</span>
         </Link>

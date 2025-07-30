@@ -51,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-          className={`${telegraf.className} tracking-[0.01em]`}
+          className={`${telegraf.className} tracking-[0.01em] h-[130vh] md:h-[100vh] relative`}
       >
         <Header/>
          <ContextProvider> 
